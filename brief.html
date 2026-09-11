@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#E7EAE7">
+<meta name="description" content="Лабоход — переодевалка Лиги Героев и расчёт процента побед по мобам этажа.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Лабоход">
+<style>
+  :root{color-scheme:light}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<title>Проверка Лабохода</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#E7EAE7; --panel:#F2F4F2; --sunk:#DBE0DD;
+    --ink:#161B1C; --dim:#4C5654; --faint:#7C8785;
+    --rule:#CBD2CF; --hair:#DDE2E0;
+    --accent:#26685F; --accent-soft:#DCE9E6;
+    --ok:#3B6B4A; --ok-bg:#DEEBE0;
+    --warn:#8A6B15; --warn-bg:#F1E8CE;
+    --mid:#9A521B; --mid-bg:#F3E2D3;
+    --bad:#8E332C; --bad-bg:#F1DDD9;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --ground:#101516; --panel:#171E1F; --sunk:#0A0E0F;
+    --ink:#DEE5E3; --dim:#9BA6A4; --faint:#6F7A78;
+    --rule:#242D2E; --hair:#1D2526;
+    --accent:#5FB3A3; --accent-soft:#132724;
+    --ok:#7FB68C; --ok-bg:#16241A;
+    --warn:#CDAA5B; --warn-bg:#2A2313;
+    --mid:#D18E5C; --mid-bg:#2C1E14;
+    --bad:#D07C74; --bad-bg:#2B1715;
+  }}
+  :root[data-theme="dark"]{
+    --ground:#101516; --panel:#171E1F; --sunk:#0A0E0F;
+    --ink:#DEE5E3; --dim:#9BA6A4; --faint:#6F7A78;
+    --rule:#242D2E; --hair:#1D2526;
+    --accent:#5FB3A3; --accent-soft:#132724;
+    --ok:#7FB68C; --ok-bg:#16241A;
+    --warn:#CDAA5B; --warn-bg:#2A2313;
+    --mid:#D18E5C; --mid-bg:#2C1E14;
+    --bad:#D07C74; --bad-bg:#2B1715;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--ink); margin:0;
+    padding-block:0 64px; padding-left:20px; padding-right:20px;
+    font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:15.5px; line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px; margin:0 auto}
+  h1,h2,h3{font-family:Bitter,Georgia,serif; margin:0; text-wrap:balance}
+  h1{font-size:clamp(32px,6vw,48px); font-weight:700; line-height:1.05; letter-spacing:-.015em}
+  h2{font-size:20px; font-weight:600; line-height:1.25}
+  h3{font-size:15.5px; font-weight:600}
+  p{margin:0; max-width:68ch}
+  a{color:var(--accent)}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--faint)}
+  .mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+
+  header{padding-block:52px 26px; display:flex; flex-direction:column; gap:16px}
+  .lede{font-family:Bitter,Georgia,serif; font-size:19px; line-height:1.5; color:var(--dim); max-width:60ch}
+  .cta{display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin-top:4px}
+  .btn{display:inline-block; background:var(--accent); color:var(--ground);
+    text-decoration:none; font-weight:600; font-size:15px; padding:11px 22px}
+  .btn:hover{filter:brightness(1.12)}
+  .btn:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+  .cta small{color:var(--faint); font-size:13px}
+
+  .facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+    gap:1px; background:var(--rule); border:1px solid var(--rule); margin-block:8px 0}
+  .facts div{background:var(--ground); padding:12px 14px}
+  .facts b{display:block; font-family:"IBM Plex Mono",monospace; font-size:19px;
+    font-weight:500; font-variant-numeric:tabular-nums; color:var(--accent)}
+  .facts span{font-size:12px; color:var(--faint); line-height:1.35; display:block; margin-top:2px}
+
+  section{padding-block:34px; border-top:1px solid var(--rule)}
+  .head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:18px}
+
+  .blocks{display:flex; flex-direction:column; gap:22px}
+  .block{display:grid; grid-template-columns:minmax(0,190px) minmax(0,1fr); gap:6px 28px;
+    align-items:start}
+  .block .lbl{display:flex; flex-direction:column; gap:5px}
+  .block h3{color:var(--ink)}
+  .block .sub{font-size:12.5px; color:var(--faint); line-height:1.45}
+  .block p{color:var(--dim); font-size:14.5px}
+  @media (max-width:640px){ .block{grid-template-columns:1fr; gap:8px} }
+
+  ol.steps{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px;
+    counter-reset:s}
+  ol.steps li{counter-increment:s; display:grid; grid-template-columns:26px 1fr; gap:14px;
+    font-size:14.5px; color:var(--dim)}
+  ol.steps li::before{content:counter(s); font-family:"IBM Plex Mono",monospace; font-size:12px;
+    color:var(--accent); border:1px solid var(--rule); width:26px; height:26px;
+    display:grid; place-items:center; margin-top:1px}
+  ol.steps b{color:var(--ink); font-weight:600}
+
+  .tablewrap{overflow-x:auto; border:1px solid var(--rule); background:var(--panel)}
+  table{border-collapse:collapse; width:100%; min-width:620px; font-size:13.5px}
+  th,td{padding:9px 12px; text-align:left; border-bottom:1px solid var(--hair); white-space:nowrap}
+  thead th{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--faint); font-weight:400; background:var(--sunk)}
+  tbody tr:last-child td{border-bottom:none}
+  td.n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+  td.name{font-weight:500}
+  .pill{display:inline-block; padding:1px 8px; font-family:"IBM Plex Mono",monospace; font-size:12px}
+  .pill.ok{background:var(--ok-bg); color:var(--ok)}
+  .pill.warn{background:var(--warn-bg); color:var(--warn)}
+  .pill.mid{background:var(--mid-bg); color:var(--mid)}
+  .pill.bad{background:var(--bad-bg); color:var(--bad)}
+  .zones{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:12px; font-size:12.5px; color:var(--faint)}
+  .zones span{display:flex; align-items:center; gap:7px}
+
+  .ask{border-left:3px solid var(--accent); background:var(--panel); padding:20px 22px;
+    display:flex; flex-direction:column; gap:16px}
+  .ask .q{display:grid; grid-template-columns:minmax(0,1fr); gap:3px}
+  .ask .q b{font-size:14.5px}
+  .ask .q p{font-size:13.5px; color:var(--dim)}
+  .ask .q .model{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--accent);
+    background:var(--accent-soft); padding:2px 8px; justify-self:start; margin-top:4px}
+
+  ul.plain{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px}
+  ul.plain li{display:flex; gap:11px; font-size:14.5px; color:var(--dim)}
+  ul.plain li>span{flex:1; min-width:0}
+  ul.plain li::before{content:"—"; color:var(--faint); font-family:"IBM Plex Mono",monospace}
+  ul.plain b{color:var(--ink); font-weight:600}
+
+  footer{padding-top:30px; border-top:1px solid var(--rule); color:var(--faint); font-size:13px;
+    display:flex; flex-direction:column; gap:8px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Лига Героев · сборка на тест</div>
+  <h1>Лабоход</h1>
+  <p class="lede">Одеваешь персонажа на манекене — процент побед по каждому мобу этажа пересчитывается сам. Считает не по прикидке, а прогоном пяти тысяч боёв на моба по настоящим правилам игры.</p>
+  <div class="cta">
+    <a class="btn" href="./">Открыть Лабоход</a>
+    <small>Открывается в браузере, ничего ставить не надо. Телефон тоже держит.</small>
+  </div>
+  <div class="facts">
+    <div><b>1107</b><span>вещей с точными статами</span></div>
+    <div><b>725</b><span>последователей 1–12 ур.</span></div>
+    <div><b>349</b><span>мобов со своими отрядами</span></div>
+    <div><b>38</b><span>лабиринтов</span></div>
+    <div><b>196</b><span>зелий</span></div>
+    <div><b>68</b><span>эффектов 13+</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="head"><span class="eyebrow">Что внутри</span><h2>Три части, одна страница</h2></div>
+  <div class="blocks">
+
+    <div class="block">
+      <div class="lbl"><h3>Переодевалка</h3><div class="sub">манекен, фильтры, зелья, эффекты 13+, арт-эдитор, 30 комплектов</div></div>
+      <p>Тот же манекен, что в игре: 14 слотов, весь каталог вещей с требованиями по Силе и Уму, зелья, ветки эффектов 13+. Всё складывается по правилам игры — Сила даёт жизнь, Ум даёт концентрацию, магии и власти идут и в атаку, и в защиту. Свои артефакты считаются формулой самой игры, с ценой в УМ и требуемым уровнем. Комплекты сохраняются и переключаются в один клик.</p>
+    </div>
+
+    <div class="block">
+      <div class="lbl"><h3>Симулятор боя</h3><div class="sub">кольцо камень-ножницы-бумага, блок заклятий, крит, стаки эффектов</div></div>
+      <p>Отряд берётся из энциклопедии по твоему уровню, магиям, властям и гильдиям — никаких выдуманных кастов. У каждого моба свой отряд, тоже настоящий: наведи на моба и увидишь поимённо, кем он ходит и какие у них заклятия. Модель сама подбирает, кого ставить против кого и с каким тактом, и учитывает, что подряд одним типом карт больше трёх раз не походишь.</p>
+    </div>
+
+    <div class="block">
+      <div class="lbl"><h3>Разбор боя</h3><div class="sub">чем убиваешь, где дыра, его темп, за один его размен</div></div>
+      <p>По каждому мобу расписано словами: что ставить, что не окупается, какой защиты не хватает и до какого числа, сколько он снимает за один свой размен и чем именно. Плюс цепочка: собираешь пачку в том порядке, в каком она выходит, и смотришь, на ком ломаешься.</p>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="head"><span class="eyebrow">Как начать</span><h2>Четыре шага, минуты три</h2></div>
+  <ol class="steps">
+    <li><span><b>Собери себя.</b> Поставь уровень, Силу, Ум, магии и власти в панели «Параметры» — галочка «править». Дальше вешай вещи на манекен или введи итоговые числа руками в столбец правки.</span></li>
+    <li><span><b>Отметь гильдии.</b> Плашка показывает, сколько последователей эта гильдия открывает именно тебе. Серые — те, что ничего не дают на твоём уровне.</span></li>
+    <li><span><b>Выбери лабиринт и этаж.</b> Жми «Рассчитать». Этаж считается за три-четыре секунды.</span></li>
+    <li><span><b>Читай таблицу и разбор.</b> Если что-то не сходится с твоим опытом — это и есть то, что нам нужно услышать.</span></li>
+  </ol>
+</section>
+
+<section>
+  <div class="head"><span class="eyebrow">Что показывает</span><h2>Строка на моба</h2></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th>Моб</th><th>Ур.</th><th>Чем бьёт</th><th>Побед</th><th>Ходов</th><th>Ударов моба</th><th>Порог</th><th>Твоя защита</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="name">Радужный Полоз</td><td class="n">13</td><td>удар до 56</td>
+          <td class="n"><span class="pill ok">86%</span></td><td class="n">48</td><td class="n">34</td>
+          <td class="n">50 Яд</td><td class="n"><span class="pill bad">20</span></td></tr>
+        <tr><td class="name">Мастер Чистой Магии</td><td class="n">14</td><td>Колдовство 88 · удар до 56</td>
+          <td class="n"><span class="pill warn">51%</span></td><td class="n">24</td><td class="n">10</td>
+          <td class="n">48 Колдовство</td><td class="n"><span class="pill bad">28</span></td></tr>
+        <tr><td class="name">Тень Героя</td><td class="n">15</td><td>удар до 56</td>
+          <td class="n"><span class="pill ok">95%</span></td><td class="n">26</td><td class="n">21</td>
+          <td class="n">30 Драконы</td><td class="n"><span class="pill ok">33</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="zones">
+    <span><span class="pill ok">76–100</span> проходится</span>
+    <span><span class="pill warn">51–75</span> с риском</span>
+    <span><span class="pill mid">31–50</span> чаще проигрыш</span>
+    <span><span class="pill bad">0–30</span> не ходить</span>
+  </div>
+  <p style="margin-top:16px; font-size:14px; color:var(--dim)"><b>Ударов моба</b> — сколько его выигранных разменов ты выдерживаешь, если вообще не отвечать. В одном размене он делает всё сразу: бьёт последователем, накладывает его заклятие и добавляет магический удар. Это число прямее всего показывает, что даёт комплект.</p>
+  <p style="margin-top:10px; font-size:14px; color:var(--dim)"><b>Порог</b> — защита, при которой его касты блокируются на 82,5%: два с половиной уровня заклятия. Рядом тип защиты, по которому он бьёт на самом деле — у Радужного Полоза это Яд, а не Драконы.</p>
+</section>
+
+<section>
+  <div class="head"><span class="eyebrow">Главное</span><h2>Что проверить в первую очередь</h2></div>
+  <p style="margin-bottom:18px; color:var(--dim); font-size:14.5px">Модель собрана из энциклопедии и бестиария, но четыре правила выведены расчётом, а не подтверждены. Если у тебя есть живой бой под рукой — сверь именно их. Одна цифра из настоящего лога стоит дня замеров.</p>
+  <div class="ask">
+
+    <div class="q">
+      <b>Сколько ядов висит на тебе одновременно</b>
+      <p>Против Радужного Полоза, если защиты от яда нет. У него трое ядовитых из десяти, и кастует он только в свой выигранный размен.</p>
+      <span class="model">модель: в среднем 1 стак, в пике 3</span>
+    </div>
+
+    <div class="q">
+      <b>Копится ли бафф без предела</b>
+      <p>Святое Оружие +21 на себя, повешенное шесть раз подряд, — это +126 к Атаке Рыцарей или всё-таки есть потолок? В панели стоит ручка «стаков одного баффа», по умолчанию 3. Поставь 0 и увидишь, как раскачка вытесняет все остальные советы.</p>
+      <span class="model">модель: потолок 3, доты копятся всегда</span>
+    </div>
+
+    <div class="q">
+      <b>Правда ли подряд одним типом не походить</b>
+      <p>Три карты одного типа подряд, дальше приходится менять. Насколько жёстко это работает и не три ли там на самом деле два.</p>
+      <span class="model">модель: после трёх меняешь в 85% случаев</span>
+    </div>
+
+    <div class="q">
+      <b>Сколько мобов из пачки дотягивается</b>
+      <p>Если в пачке пятеро, бьют трое, а остальные ждут очереди — или достают все?</p>
+      <span class="model">модель: первые трое живых</span>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="head"><span class="eyebrow">Честно</span><h2>Где модель может врать</h2></div>
+  <ul class="plain">
+    <li><span><b>Выбор последователя мобом.</b> Считается, что моб берёт из своей линии по кругу. Если он выбирает осмысленно — например всегда суёт ядовитого, — все проценты завышены.</span></li>
+    <li><span><b>99 последователей из 569 в отрядах мобов</b> — клановые, снежные и Тени — в энциклопедии не значатся. Их атака выведена: без заклятия полная база уровня, с заклятием среднее по энциклопедии для того же каста.</span></li>
+    <li><span><b>Способности вроде «50% заблокировать заклинание»</b> пока не смоделированы. «Игнорирует броню» и «игнорирует магическую защиту» — смоделированы.</span></li>
+    <li><span><b>Бой считается один на один при полном здоровье.</b> Проходимость этажа подряд без отдыха — это другое; для неё есть цепочка.</span></li>
+    <li><span><b>Зелья в бою не пьются.</b> Модель считает только стартовый комплект.</span></li>
+  </ul>
+</section>
+
+<footer>
+  <div>Бестиарий и отряды мобов — flhelper.ru. Вещи, зелья, последователи и правила — энциклопедия Лиги Героев.</div>
+  <div>Что писать в ответ: свой уровень и ключевые статы, моб, что показал Лабоход и что вышло в игре. Расхождение важнее похвалы.</div>
+</footer>
+
+</div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
+</script>
+
+</body>
+</html>
