@@ -707,6 +707,10 @@ function basePoints(lvl){ let p = 0; for (let l = 1; l <= lvl; l++) p += ptGain(
 const FOLL_BASE = [0,3,6,9,12,15,20,25,30,35,42,49,56];
 function follBase(l){ return FOLL_BASE[Math.min(l, 12)] || (56 + (l - 12) * 7); }
 
+/* Моб бьёт КАЖДОЙ своей школой, как и игрок: у Мастера Магий их четыре по 35,
+   и все четыре уходят в размен по своим защитам. */
+function mobSchools(m){ return MAGS.filter(k => m[k][0] > 0); }
+/* сильнейшая — для подписи «чем бьёт» и для выбора угрозы */
 function mobSchool(m){
   let best = null, v = 0;
   for (const k of MAGS) if (m[k][0] > v){ v = m[k][0]; best = k; }
@@ -868,7 +872,7 @@ function fight(p, mobs, plan, capOverride){
       mag: {c:m.c[0], h:m.h[0], s:m.s[0], a:m.a[0]},
       hp: m.hp, maxhp: m.hp, reg: mobReg(m), pp: m.pp, luck: m.luck, conc: m.conc, meff: 0
     };
-    return {m, s, stacks: [], ci: 0, qi: 0, msch: mobSchool(m),
+    return {m, s, stacks: [], ci: 0, qi: 0, msch: mobSchool(m), mschs: mobSchools(m),
             squad: mobSquad(m), lines: mobLines(m), li: [0,0,0], Lm: FOLLOWER_LVL + m.eff,
             alive: true, killedAt: 0};
   });
@@ -996,11 +1000,12 @@ function fight(p, mobs, plan, capOverride){
       const raw = mf.a + e.s.atk[mf.t];
       if (raw > 0){ const dm = hit(raw, pierceA ? 0 : me.dfn[mf.t]) * d2;
         if (dm > 0){ me.hp -= dm; taken.hit += dm; } }
-      /* магический удар моба своей школой */
-      if (e.msch && e.s.mag[e.msch] > 0){
-        const A = e.s.mag[e.msch];
+      /* магические удары моба — по одному за каждую его школу */
+      for (const k of e.mschs){
+        const A = e.s.mag[k];
+        if (A <= 0) continue;
         const lo = Math.min(e.s.conc * 2, A);
-        const dm = hit(lo + rnd() * (A - lo), pierceM ? 0 : me.dfn[e.msch]);
+        const dm = hit(lo + rnd() * (A - lo), pierceM ? 0 : me.dfn[k]);
         me.hp -= dm; taken.magic += dm;
       }
     }
@@ -1580,8 +1585,9 @@ function hodov(n){
 }
 /* чем бьёт: школа плюс самый сильный удар его отряда — с учётом прибавки бестиария */
 function attackDesc(m){
-  const sch = mobSchool(m), parts = [];
-  if (sch) parts.push(`${SCHOOL_RU[sch]} ${m[sch][0]}`);
+  const parts = [];
+  const sc = mobSchools(m);
+  if (sc.length) parts.push(sc.map(k => `${SCHOOL_RU[k]} ${m[k][0]}`).join(' + '));
   let best = 0, bt = null;
   for (const f of mobSquad(m)){ const v = f.a + m[f.t][0]; if (v > best){ best = v; bt = f.t; } }
   if (best > 0) parts.push(`удар до ${best} <span class="lvl">${PHYS_RU[bt]}</span>`);
