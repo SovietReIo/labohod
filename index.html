@@ -469,6 +469,7 @@
         <div class="fld"><label>Боёв на моба</label><input type="number" id="iters" value="5000" min="1" step="500"></div>
         <div class="fld"><label>Лимит ходов на моба</label><input type="number" id="maxTurns" value="60" min="5" step="5"></div>
         <div class="hint">Подбор считает удачей только тот бой, что уложился в лимит: победа за 40 ходов и победа за 200 — разные вещи. Поставь свой предел терпения по зельям.<br><br>
+        Заклятие работает с хода, на котором наложено: «на 9 ходов» — это ход каста плюс девять следующих, десять тиков.<br><br>
         Стаки не ограничены ничем: и доты, и баффы копятся сколько наложишь. Святое Оружие +21, повешенное шесть раз, разгоняет Атаку Рыцарей с 15 до 141 — именно так это и работает в игре.</div>
       </div>
     </div>
@@ -624,11 +625,11 @@
     </div>
     <div class="box">
       <h3>Блок заклятий</h3>
-      <p class="note" style="margin-top:0">33% при защите, равной уровню заклятия, 66% при вдвое большей, 99% при втрое; между узлами линейно. <b>Уровень заклятия = уровень последователя плюс Сила Эффектов кастующего.</b> Отсюда рабочий порог: защита в 2,5 уровня даёт 82,5% блока — и с этого места моб в 95% случаев меняет такую карту на другую, а не тратит ход впустую.</p>
+      <p class="note" style="margin-top:0">33% при защите, равной уровню заклятия, 66% при вдвое большей, 99% при втрое; между узлами линейно. <b>Уровень заклятия = уровень последователя плюс Сила Эффектов кастующего.</b> Отсюда рабочий порог: защита в 2,5 уровня даёт 82,5% блока — и с этого места моб в 95% случаев меняет такую карту на другую, а не тратит ход впустую. <b>Блокируется и собственный бафф, если у него есть тип:</b> «Ревность» — каст дамы, и защита противника от дам снимает её так же, как сняла бы удар по нему. Поэтому разгон физической атаки через власть работает там, где у моба нет защиты от этой власти, а против теней остаются доты и нейтральные касты.</p>
     </div>
     <div class="box">
       <h3>Крит и эффекты</h3>
-      <p class="note" style="margin-top:0">Крит = 5% плюс 2% за каждый пункт превосходства по Удаче, не выше 99%. Удваивает урон последователя и <b>накладывает заклятие дважды</b>. <b>Эффекты складываются — и доты, и баффы.</b> Каждый удавшийся каст кладёт свой стак на свой срок, и в конце хода тикает каждый живой. Жажда Крови +19, повешенная трижды, даёт +57 к Атаке Хаоса: так пробивают стены вроде Тени Героя, где обычный удар в её 65 защиты не проходит вовсе. Отряд перебирается по кругу с подобранным тактом: дот на 9 ходов достаточно вешать раз в три хода, между ними бьёшь базой. <b>Одним типом карт подряд ходить нельзя:</b> после трёх раз в 85% случаев приходится менять тип — мобы подстраиваются, и модель считает вынужденные подмены как настоящие ходы. <b>У моба свой отряд из бестиария</b> — поимённо, с настоящими заклятиями: наведи на моба и посмотри. В свой выигранный размен он выставляет одного из них: урон — атака этого последователя плюс атака моба его типа минус твоя защита, заклятие — его собственное, с блоком по своему типу. Никаких выдуманных кастов у мобов больше нет. Тени умеют игнорировать броню и магическую защиту — это записано у них в способности.</p>
+      <p class="note" style="margin-top:0">Крит = 5% плюс 2% за каждый пункт превосходства по Удаче, не выше 99%. Удваивает урон последователя и <b>накладывает заклятие дважды</b>. <b>Эффекты складываются — и доты, и баффы.</b> Каждый удавшийся каст кладёт свой стак на свой срок, и в конце хода тикает каждый живой. Жажда Крови +19, повешенная трижды, даёт +57 к Атаке Хаоса: так пробивают стены вроде Тени Героя, где обычный удар в её 65 защиты не проходит вовсе. Отряд перебирается по кругу с подобранным тактом: дот на 9 ходов достаточно вешать раз в три хода, между ними бьёшь базой. <b>Одним типом карт подряд ходить нельзя:</b> после трёх раз в 85% случаев приходится менять тип — модель считает вынужденные подмены как настоящие ходы. <b>У моба свой отряд из бестиария</b> — поимённо, с настоящими заклятиями: наведи на моба и посмотри. В свой выигранный размен он выставляет одного из них: урон — атака этого последователя плюс атака моба его типа минус твоя защита, заклятие — его собственное, с блоком по своему типу. Никаких выдуманных кастов у мобов больше нет. Тени умеют игнорировать броню и магическую защиту — это записано у них в способности.</p>
     </div>
   </div>
 </section>
@@ -681,8 +682,21 @@ let MAX_TURNS = 60;
    при шансе блока от 82,5% он в 95% случаев выкладывает другую карту. */
 let BLOCK_SKIP = 0.825, SKIP_P = 0.95;
 /* Потолка у стаков нет ни у дотов, ни у баффов: сколько наложил, столько
-   и работает. */
-function addStack(arr, S, side){ arr.push({S, left: S.d, side}); }
+   и работает.
+   Заклятие работает с хода, на котором наложено: «на 9 ходов» — это ход каста
+   плюс девять следующих, всего десять тиков. */
+let SAME_BUFF_STACKS = true;      // одинаковый бафф копится, а не обновляет срок
+const isDot = S => { for (const k in S.v) if (k !== 'regen_hp' && k !== 'hp_now') return false; return true; };
+function addStack(arr, S, side, applied){
+  if (!SAME_BUFF_STACKS && !isDot(S)){
+    for (const x of arr) if (x.S === S && x.side === side){
+      x.left = S.d + 1;                       // тот же бафф — только продлеваем
+      if (applied) applySpell(side, S, -1);   // прибавку откатываем
+      return;
+    }
+  }
+  arr.push({S, left: S.d > 1 ? S.d + 1 : S.d, side});
+}
 
 const PHYS = ['d','k','l'], MAGS = ['c','h','s','a'];
 const beats = {d:'l', l:'k', k:'d'};
@@ -780,12 +794,19 @@ const SPELL_MAP = {
   ac:['mag','c'], ah:['mag','h'], aso:['mag','s'], aa:['mag','a'],
   all_attack:['atk','*'], all_defence:['dfn','#'],
   all_magic_attack:['mag','#'], all_magic_defence:['dfn','@'],
-  luck:['s','luck'], conc:['s','conc'], pp:['s','pp'], m_prot:['s','meff'],
+  luck:['s','luck'], conc:['s','conc'], pp:['s','pp'], m_prot:['s','meff'], pn:['s','pn'],
   regen_hp:['s','reg'], max_hp:['s','maxhp'], hp_now:['s','hp']
 };
-/* какой защитой блокируется заклятие: n не блокируется вовсе */
+/* Блокирует ли противник заклятие, наложенное на себя. По энциклопедии блок —
+   это защита ЦЕЛИ, и собственный бафф блокировать некому; по игровой практике
+   защита противника по типу каста его всё же снимает. Переключатель — чтобы
+   не гадать. */
+let BLOCK_SELF = true;
+/* какой защитой блокируется заклятие. Нейтральные снимаются Защитой от
+   Нейтральных (Антимагией) по той же кривой 33/66/99; у мобов такой защиты
+   в бестиарии нет вовсе, так что твои нейтральные касты не блокируются. */
 function spellDef(S, side){
-  if (S.t === 'n') return null;
+  if (S.t === 'n') return side.pn || 0;
   if (S.t === 'pp') return side.pp;
   return side.dfn[S.t] !== undefined ? side.dfn[S.t] : 0;
 }
@@ -816,7 +837,7 @@ function scoreCand(p, f, m){
   if (S){
     const L = f.l + p.meff;
     const D = S.t === 'n' ? 0 : S.t === 'pp' ? m.pp : (m[S.t] ? m[S.t][1] : 0);
-    const pass = S.t === 'n' || S.f === 0 ? 1 : (1 - block(D, L));
+    const pass = (S.f === 0 && !BLOCK_SELF) ? 1 : (1 - block(D, L));
     let g = 0;
     for (const k in S.v){
       const x = S.v[k], a = Math.abs(x);
@@ -836,8 +857,9 @@ function scoreCand(p, f, m){
   return v;
 }
 
-/* Заклятие последователя моба впустую? Считаем только то, что летит в игрока
-   и имеет тип: нейтральное не блокируется вовсе, свои баффы блокировать некому.
+/* Заклятие последователя моба впустую? Меряем каждое о твою защиту его типа:
+   нейтральное — об Антимагию, ядовитое — о Защиту от Яда, остальные — о защиту
+   своей власти или школы (при BLOCK_SELF собственные баффы моба — тоже).
    Если всё такое снимается с шансом от BLOCK_SKIP — карта пустая. */
 function wasted(mf, e, me){
   const efs = [];
@@ -845,10 +867,11 @@ function wasted(mf, e, me){
   if (mf.e2) for (const x of mf.e2) if (MOB_EFF[x]) efs.push(MOB_EFF[x]);
   let any = false;
   for (const ef of efs){
-    if (!ef.a || !ef.a.length || !ef.t || ef.t === 'n') continue;
-    if (!ef.a.some(x => x.f === 1)) continue;
+    if (!ef.a || !ef.a.length || !ef.t) continue;
+    if (!BLOCK_SELF && !ef.a.some(x => x.f === 1)) continue;
     any = true;
-    const D = ef.t === 'pp' ? me.pp : (me.dfn[ef.t] !== undefined ? me.dfn[ef.t] : 0);
+    const D = ef.t === 'n' ? (me.pn || 0)
+            : ef.t === 'pp' ? me.pp : (me.dfn[ef.t] !== undefined ? me.dfn[ef.t] : 0);
     if (block(D, mf.l + e.m.eff) < BLOCK_SKIP) return false;   // это ещё проходит
   }
   return any;
@@ -860,7 +883,8 @@ function fight(p, mobs, plan, capOverride){
     atk: Object.assign({}, p.atk),
     dfn: Object.assign({}, p.dfn),
     mag: {c:0, h:0, s:0, a:0},
-    hp: p.hp, maxhp: p.hp, reg: p.reg, pp: p.pp, luck: p.luck, conc: p.conc, meff: p.meff
+    hp: p.hp, maxhp: p.hp, reg: p.reg, pp: p.pp, pn: p.pn || 0,
+    luck: p.luck, conc: p.conc, meff: p.meff
   };
   for (const g of p.mags) me.mag[g.k] = g.a;
   const myStacks = [];   // {S, left}
@@ -870,7 +894,8 @@ function fight(p, mobs, plan, capOverride){
       atk: {d:m.d[0], k:m.k[0], l:m.l[0]},
       dfn: {d:m.d[1], k:m.k[1], l:m.l[1], c:m.c[1], h:m.h[1], s:m.s[1], a:m.a[1]},
       mag: {c:m.c[0], h:m.h[0], s:m.s[0], a:m.a[0]},
-      hp: m.hp, maxhp: m.hp, reg: mobReg(m), pp: m.pp, luck: m.luck, conc: m.conc, meff: 0
+      hp: m.hp, maxhp: m.hp, reg: mobReg(m), pp: m.pp, pn: 0,
+      luck: m.luck, conc: m.conc, meff: 0
     };
     return {m, s, stacks: [], ci: 0, qi: 0, msch: mobSchool(m), mschs: mobSchools(m),
             squad: mobSquad(m), lines: mobLines(m), li: [0,0,0], Lm: FOLLOWER_LVL + m.eff,
@@ -924,7 +949,8 @@ function fight(p, mobs, plan, capOverride){
       const S = f.s;
       if (S){
         const side = S.f === 1 ? t.s : me;
-        const D = S.f === 1 ? spellDef(S, t.s) : null;
+        /* и свой бафф, и удар по врагу меряются о его защиту того же типа */
+        const D = (S.f === 1 || BLOCK_SELF) ? spellDef(S, t.s) : null;
         const L = f.l + p.meff;
         if (D === null || rnd() > block(D, L)){
           for (let q = 0; q < dbl; q++){
@@ -980,14 +1006,14 @@ function fight(p, mobs, plan, capOverride){
       /* заклятия последователя */
       for (const ef of efs){
         if (!ef.a || !ef.a.length) continue;
-        const D = ef.t === 'n' ? null
+        const D = ef.t === 'n' ? (me.pn || 0)
                 : ef.t === 'pp' ? me.pp
                 : (me.dfn[ef.t] !== undefined ? me.dfn[ef.t] : 0);
         const L = mf.l + e.m.eff;
         for (const act of ef.a){
           const onMe = act.f === 1;
           const side = onMe ? me : e.s;
-          if (onMe && D !== null && rnd() <= block(D, L)) continue;   // заблокировано
+          if ((onMe || BLOCK_SELF) && D !== null && rnd() <= block(D, L)) continue;   // заблокировано
           for (let q = 0; q < d2; q++){
             const h0 = me.hp;
             applySpell(side, act, 1);
@@ -1472,7 +1498,7 @@ function readPlayer(){
   const am = {c: T.ac, h: T.ah, s: T.as, a: T.aa};
   const live = MAGS.filter(k => am[k] > 0);
   return {
-    hp: T.hp, luck: T.luck, reg: T.reg, conc: T.conc, meff: T.meff, pp: T.pp,
+    hp: T.hp, luck: T.luck, reg: T.reg, conc: T.conc, meff: T.meff, pp: T.pp, pn: T.pn,
     atk: {d: T.ad, k: T.ak, l: T.al},
     dfn: {d: T.dd, k: T.dk, l: T.dl, c: T.dc, h: T.dh, s: T.ds, a: T.da},
     mags: live.map(k => ({k, a: am[k]})),
@@ -1605,15 +1631,15 @@ function folEffs(f){
 function threat(m){
   const cnt = {};
   for (const f of mobSquad(m)) for (const e of folEffs(f)){
-    if (!e.a || !e.a.length || !e.t || e.t === 'n') continue;
+    if (!e.a || !e.a.length || !e.t) continue;
     if (!e.a.some(x => x.f === 1)) continue;        // только то, что летит в меня
     cnt[e.t] = (cnt[e.t] || 0) + 1;
   }
   const best = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
   return best || mobSchool(m) || mobPhysTypes(m)[0] || 'd';
 }
-const DEF_RU = Object.assign({pp: 'Яд'}, PHYS_RU, SCHOOL_RU);
-const defOf = (p, t) => t === 'pp' ? p.pp : (p.dfn[t] || 0);
+const DEF_RU = Object.assign({pp: 'Яд', n: 'Антимагия'}, PHYS_RU, SCHOOL_RU);
+const defOf = (p, t) => t === 'pp' ? p.pp : t === 'n' ? (p.pn || 0) : (p.dfn[t] || 0);
 /* чёткие зоны, без плавающих порогов */
 const ZONES = [[76,'ok','проходится'],[51,'warn','с риском'],[31,'mid','чаще проигрыш'],[0,'bad','не ходить']];
 const zoneOf = v => ZONES.find(z => v >= z[0]) || ZONES[3];

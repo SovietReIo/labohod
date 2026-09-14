@@ -1,5 +1,5 @@
 /* Лабоход — сервис-воркер. Версия меняется сама при каждой сборке. */
-const V = 'labohod-39c72de10c';
+const V = 'labohod-a83fef6e79';
 const SHELL = ['./', './index.html', './brief.html', './manifest.webmanifest',
                './icon-192.png', './icon-512.png', './icon-180.png', './icon-maskable-512.png'];
 
