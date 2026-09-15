@@ -387,6 +387,8 @@
   .brief p{font-size:13px; color:var(--ink-soft); line-height:1.5; margin:0}
   dl.bl{display:grid; grid-template-columns:auto 1fr; gap:3px 10px; margin:0; font-size:12.5px}
   dl.bl dt{font-weight:600; color:var(--ink); white-space:nowrap}
+  dl.bl dd i{font-style:normal; font-family:"IBM Plex Mono",monospace; color:var(--brass)}
+  dl.bl dd em{font-style:normal; font-size:11.5px; color:var(--ink-faint)}
   dl.bl dd{margin:0; color:var(--ink-soft); line-height:1.45}
   @media (max-width:520px){ dl.bl{grid-template-columns:1fr; gap:0}
     dl.bl dt{margin-top:6px} }
@@ -904,7 +906,7 @@ function fight(p, mobs, plan, capOverride){
 
   const open = plan.open, loop = plan.loop.length ? plan.loop : [plan.base];
   const alt = plan.alt || {};
-  let lastT = null, runN = 0, swaps = 0, cards = 0;
+  let lastT = null, runN = 0, swaps = 0, cards = 0, altN = 0;
   let target = 0, dealt = {hit:0, magic:0, spell:0, dot:0};
   const taken = {hit:0, magic:0, spell:0, drain:0};  // что он снял с меня и чем
   let drainSum = 0, drainMax = 0, enemyHits = 0;
@@ -937,7 +939,13 @@ function fight(p, mobs, plan, capOverride){
         const c = loop[(t.ci + k) % loop.length];
         if (c.t !== lastT) g = c;
       }
-      if (!g) for (const q of PHYS) if (q !== lastT && alt[q]){ g = alt[q]; break; }
+      /* Другие типы перебираются ПО КРУГУ. Раньше перебор всегда начинался с
+         драконов и обрывался на первом подходящем, поэтому третий тип не
+         выходил на стол никогда. */
+      if (!g){
+        const others = PHYS.filter(q => q !== lastT && alt[q]);
+        if (others.length){ g = alt[others[altN++ % others.length]]; }
+      }
       if (g){ f = g; swapped = true; swaps++; }
     }
     cards++;
@@ -1067,6 +1075,20 @@ function fight(p, mobs, plan, capOverride){
    Меряем две вещи: процент побед и среднюю длину боя. Проигрыш считаем за 200 ходов. */
 let _memo = new Map();
 const planKey = pl => pl.open.map(f => f.n).join('>') + '||' + pl.loop.map(f => f.n).join('>');
+/* Голый процент побед — для показа. scorePlan даёт составную оценку (победы в
+   лимит плюс десятая доля за долгие плюс добор по остатку жизни), она годится
+   для выбора, но числом в разбор её ставить нельзя: бывает и больше ста. */
+function winOf(p, list, plan, n, sd){
+  seed(sd || 4242);
+  const cap = Math.min(900, 200 + 120 * (list.length - 1));
+  let w = 0, rs = 0;
+  for (let i = 0; i < n; i++){
+    const r = fight(p, list, plan, cap);
+    if (r.win){ w++; rs += r.rounds; }
+  }
+  return {w: w / n * 100, r: w ? rs / w : 0};
+}
+
 function scorePlan(p, list, plan, n, sd){
   const key = (sd || 4242) + ':' + n + ':' + planKey(plan);
   const hit0 = _memo.get(key);
@@ -1104,7 +1126,11 @@ function choosePlan(p, list, probe){
     if (d > bd){ bd = d; base = f; }
   }
   const cands = scored.slice(0, 18).map(x => x.f).filter(f => f !== base);
-  /* лучший чистый ударный каждого типа — на случай вынужденной смены карты */
+  /* Карту одного типа больше трёх раз подряд не пустят, и подменой играется
+     alt[тип]. Раньше сюда брался просто самый больно бьющий этого типа — в
+     ядовитой ходовке подменами шли чистые ударники, и круг разваливался.
+     Теперь берём лучшего по общей мерке, а после выбора плана ещё и
+     подгоняем под его механизм (tuneAlt). */
   const alt = {};
   for (const q of PHYS){ let b = null;
     for (const f of R) if (f.t === q && (!b || f.a + p.atk[q] > b.a + p.atk[q])) b = f;
@@ -1172,8 +1198,127 @@ function choosePlan(p, list, probe){
     }
     plan = win;
   }
+  plan = tuneAlt(p, list, plan, boss, probe, R);
   plan.cands = cands;
   return plan;
+}
+
+/* Чем именно работает заклятие карты — имя и набор задеваемых полей.
+   По ним и ищем родню того же типа: ядовитой ходовке в подмены нужен яд
+   другого типа, а не самый больно бьющий. */
+const spellFam = f => f.s ? Object.keys(f.s.v).sort().join(',') + '|' + f.s.f : null;
+
+/* Подогнать подмены под механизм выбранного плана. Проверяем замером:
+   если стало не лучше — оставляем как было. */
+function tuneAlt(p, list, plan, boss, probe, R){
+  const cards = [...plan.open, ...plan.loop];
+  const names = new Set(cards.map(f => f.s && f.s.n).filter(Boolean));
+  const fams  = new Set(cards.map(spellFam).filter(Boolean));
+  /* два кандидата в подмены на каждый тип: родня по механизму плана и просто
+     лучший по общей мерке. Что из этого работает — решает замер, а не вкус. */
+  const pick = (same, tier) => { let b = null, bv = -Infinity;
+    for (const f of same){ if (!tier(f)) continue;
+      const v = scoreCand(p, f, boss); if (v > bv){ bv = v; b = f; } }
+    return b; };
+  const kin = {}, top = {};
+  let ringInfo = null;
+  for (const q of PHYS){
+    const same = R.filter(f => f.t === q);
+    if (!same.length) continue;
+    const k = pick(same, f => f.s && names.has(f.s.n)) || pick(same, f => fams.has(spellFam(f)));
+    if (k) kin[q] = k;
+    const t = pick(same, () => true);
+    if (t) top[q] = t;
+  }
+  /* Решение принимается один раз на моба, и разница тут бывает в пару-тройку
+     процентов — на коротком зонде она тонет в шуме. Меряем с запасом. */
+  const n2 = Math.max(700, probe * 3);
+  const meas = pl => { const a = scorePlan(p, list, pl, n2, 90210), b = scorePlan(p, list, pl, n2, 31337);
+                       return {w:(a.w+b.w)/2, r:(a.r+b.r)/2}; };
+  /* Ровное кольцо по типам: три дамы, три рыцаря, три дракона. Играется
+     по-настоящему, поэтому меряем его наравне с остальными, а не отбрасываем. */
+  const ringCards = [];
+  for (const q of PHYS){ const f = kin[q] || top[q];
+    if (f) for (let i = 0; i < MAX_SAME; i++) ringCards.push(f); }
+  const ring = ringCards.length >= MAX_SAME * 2
+    ? {open: plan.open, loop: ringCards, base: plan.base, alt: Object.assign({}, plan.alt, kin)}
+    : null;
+
+  let best = plan, bs = meas(plan);
+  const tried = [];
+  for (const cand of [kin, top]){
+    const alt2 = Object.assign({}, plan.alt, cand);
+    if (PHYS.every(q => alt2[q] === plan.alt[q])) continue;
+    tried.push({open: plan.open, loop: plan.loop, base: plan.base, alt: alt2});
+  }
+  if (ring) tried.push(ring);
+  for (const tr of tried){
+    const s = meas(tr);
+    if (tr === ring){
+      const real = winOf(p, list, ring, 400, 90210);
+      ringInfo = {w: real.w, r: real.r, cards: ringCards};
+    }
+    /* Берём лучшее из нескольких, а значит ловим и проклятие победителя:
+       вариант, которому повезло на зонде, на боевом зерне отыгрывает назад.
+       Поэтому не просто «лучше», а лучше с запасом. */
+    if (s.w > bs.w + 1.5 || (s.w > bs.w - 0.4 && s.r < bs.r - 3)){ best = tr; bs = s; }
+  }
+  if (ringInfo) ringInfo.chosen = best === ring;
+  best.ring = ringInfo;
+  return best;
+}
+
+/* Карта на живучесть: свой реген или лечение. Именно ими откупаются от мобов,
+   которые много снимают за размен. */
+const healCard = f => {
+  const S = f.s; if (!S || S.f === 1) return false;
+  return (S.v.regen_hp > 0) || (S.v.hp_now > 0) || (S.v.max_hp > 0);
+};
+/* Вариант «если много бьют»: та же ходовка плюс реген-карта в круг.
+   Возвращаем замер, а не совет наугад. */
+function healOption(p, list, plan, probe){
+  const R = roster(p);
+  const inPlan = new Set([...plan.open, ...plan.loop]);
+  const boss = list.reduce((a,b) => b.hp > a.hp ? b : a, list[0]);
+  let best = null, bv = -Infinity;
+  for (const f of R){
+    if (!healCard(f) || inPlan.has(f)) continue;
+    const v = (f.s.v.regen_hp || 0) * 9 + (f.s.v.hp_now || 0) + (f.s.v.max_hp || 0);
+    if (v > bv){ bv = v; best = f; }
+  }
+  if (!best) return null;
+  const tr = {open: plan.open, loop: [...plan.loop, best], base: plan.base, alt: plan.alt};
+  const a = scorePlan(p, list, tr, probe, 90210);
+  return {f: best, w: a.w, r: a.r};
+}
+
+/* Как реально лягут ходы: круг плюс вынужденные подмены по типу.
+   Показываем ход как сыгранный — очередь в бою двигается только на
+   выигранном размене, но порядок карт от этого не меняется. */
+function moveChain(plan, n){
+  const open = plan.open, loop = plan.loop.length ? plan.loop : [plan.base];
+  const alt = plan.alt || {};
+  let lastT = null, runN = 0, qi = 0, ci = 0, altN = 0;
+  const out = [];
+  for (let i = 0; i < n; i++){
+    const fromOpen = qi < open.length;
+    let f = fromOpen ? open[qi] : loop[ci % loop.length], swapped = false;
+    if (f.t === lastT && runN >= MAX_SAME){
+      let g = null;
+      for (let k = 1; k <= loop.length && !g; k++){
+        const c = loop[(ci + k) % loop.length]; if (c.t !== lastT) g = c;
+      }
+      if (!g){
+        const others = PHYS.filter(q => q !== lastT && alt[q]);
+        if (others.length){ g = alt[others[altN++ % others.length]]; }
+      }
+      if (g){ f = g; swapped = true; }
+    }
+    if (!swapped){ if (qi < open.length) qi++; else ci++; }
+    if (f.t === lastT) runN++; else { lastT = f.t; runN = 1; }
+    out.push({f, swapped, open: fromOpen && !swapped});
+  }
+  return out;
 }
 
 const follName = f => f.n + (f.s ? ' · ' + f.s.n : '') + (f.g ? ' [' + f.g + ']' : '');
@@ -1765,22 +1910,41 @@ function briefFor(m, r, p){
   if (r.empty) return [['Отряда нет', 'Ни один последователь из энциклопедии тебе не доступен. Проверь уровень персонажа, магии, власти и гильдии.']];
   const u = r.used || {open:[], loop:[]};
 
-  const seq = [];
-  if (u.open.length) seq.push('сначала ' + u.open.join(', '));
-  if (u.loop.length) seq.push((u.open.length ? 'затем по кругу ' : 'по кругу ') + u.loop.join(', '));
-  L.push(['Ставим', seq.length ? seq.join('; ') : '—']);
+  if (r.plan.open.length)
+    L.push(['Открываем', r.plan.open.map(follName).join(', ') +
+      ' — это один раз в начале боя, дальше к ним не возвращаемся']);
 
-  const used = new Set([...u.open, ...u.loop]);
-  const skipped = (r.plan.cands || []).map(follName).filter(x => !used.has(x)).slice(0, 5);
-  if (skipped.length) L.push(['Не берём', skipped.join(', ') + ' — не окупают такт']);
+  /* карту одного типа больше трёх раз подряд не пустят, поэтому ходовка —
+     это не один последователь, а свой на каждый тип. Берём только те типы,
+     что реально выходят в круг. */
+  const chain = moveChain(r.plan, 14);
+  const byType = {};   /* вступление сюда не идёт — оно играется один раз */
+  for (const c of chain) if (!c.open && !byType[c.f.t]) byType[c.f.t] = c.f;
+  const order = PHYS.filter(q => byType[q]);
+  if (order.length)
+    L.push(['Кем ходим', order.map(q => `<b>${PHYS_RU[q].toLowerCase()}</b> — ${follName(byType[q])}`).join('; ') +
+      (order.length > 1
+        ? '. Подряд одним типом больше трёх раз не дадут, так что круг всё равно пойдёт по типам — держи под рукой карту на каждый'
+        : '. Другого типа под эту задачу в отряде нет')]);
 
-  const gUsed = [...new Set([...(r.plan.open||[]), ...(r.plan.loop||[])].map(f => f.g).filter(Boolean))];
-  const gOn = Object.keys(p.guilds || {}).filter(k => p.guilds[k]);
-  if (gOn.length){
-    const idle = gOn.filter(g => !gUsed.includes(g));
-    L.push(['Гильдии', (gUsed.length ? 'в деле ' + gUsed.join(', ') : 'ни одна не пригодилась') +
-      (idle.length ? `; вхолостую ${idle.join(', ')}` : '')]);
+  /* сворачиваем повторы: читается как ритм, а не как список */
+  const runs = [];
+  for (const c of chain){
+    const last = runs[runs.length - 1];
+    if (last && last.f === c.f) last.k++;
+    else runs.push({f: c.f, k: 1, swapped: c.swapped, open: c.open});
   }
+  const ring = r.plan.ring;
+  if (ring && !ring.chosen && ring.w > 0){
+    const names = [...new Set(ring.cards.map(f => f.n))];
+    L.push(['Ровное кольцо', `если удобнее ходить по три подряд каждым типом — ` +
+      names.join(', ') + ` — выходит ${Math.round(ring.w)}% против ${Math.round(r.win)}%. ` +
+      (r.win - ring.w > 4 ? 'Разница заметная, кольцо тут дороже' : 'Разница невелика, играй как удобнее')]);
+  }
+
+  L.push(['Как лягут ходы', runs.slice(0, 7).map(x =>
+      x.f.n + (x.k > 1 ? ` <i>×${x.k}</i>` : '') + (x.open ? ' <em>(вступление)</em>' : '')
+    ).join(' → ') + ' → …']);
 
   if (r.peak && r.start){
     const RU = {ad:'Атака Драконов', ak:'Атака Рыцарей', al:'Атака Дам',
@@ -1800,6 +1964,19 @@ function briefFor(m, r, p){
   L.push(['Чем убиваешь', `${NAM[top[0]]} — ${Math.round(top[1])}% урона` +
     (s.dot > 12 && top[0] !== 'dot' ? `, доты добавляют ${Math.round(s.dot)}%` : '')]);
 
+  /* «если много бьют — играем реген»: считаем этот вариант, а не советуем наугад */
+  if (r.perEx && !r.empty){
+    const perEx = r.perEx.hit + r.perEx.magic + r.perEx.spell;
+    if (perEx > p.hp * 0.07 || r.win < 92){
+      const h = healOption(p, [m], r.plan, 260);
+      const d = h ? h.w - r.win : -99;
+      if (d > -1.5)
+        L.push(['Если много бьёт', `добавь в круг ${follName(h.f)} — ` +
+          (d > 1.5 ? `побед становится ${Math.round(h.w)}% вместо ${Math.round(r.win)}%, бой длиннее: ${hodov(h.r)}`
+                   : `побед столько же, ${Math.round(h.w)}%, но бой идёт ${hodov(h.r)} и переживается спокойнее — брать, если жалко зелий`)]);
+    }
+  }
+
   const casts = mobSquad(m).some(f => folEffs(f).some(e => e.a && e.a.some(x => x.f === 1)));
   const pierce = mobSquad(m).some(f => folEffs(f).some(e => e.fl === 'pierce_armor' || e.fl === 'pierce_magic'));
   if (!casts){
@@ -1812,27 +1989,19 @@ function briefFor(m, r, p){
       : ['Порог закрыт', `Защита ${DEF_RU[th]} ${have} при пороге ${need} — его касты в основном блокируются`]);
   }
 
-  const T = r.taken || {hit:0, magic:0};
-  if (Math.round(T.hit + T.magic) || r.drain > 0.5)
-    L.push(['Что снимает с тебя', `за бой ударами ${Math.round(T.hit)}` +
-      (T.magic > 1 ? `, магией ${Math.round(T.magic)}` : '') +
-      (r.drain > 0.5 ? `; восстановление просажено на ${r.drain.toFixed(1)} в ход, в пике на ${Math.round(r.drainMax)}` : '')]);
-
   if (r.perEx){
     const e = r.perEx, tot = e.hit + e.magic + e.spell;
     const bits = [];
     if (e.hit > 0.5) bits.push(`ударом ${Math.round(e.hit)}`);
     if (e.magic > 0.5) bits.push(`магией ${Math.round(e.magic)}`);
     if (e.spell > 0.5) bits.push(`заклятием ${Math.round(e.spell)}`);
-    L.push(['За один свой размен', `снимает ${Math.round(tot)} — ` + (bits.join(', ') || 'ничего') +
-      `; крит от его удачи иногда удваивает`]);
+    L.push(['Сколько снимает', `${Math.round(tot)} за свой размен — ` + (bits.join(', ') || 'ничего') +
+      `, крит от его удачи иногда удваивает` +
+      (r.drain > 0.5 ? `; плюс сажает восстановление на ${r.drain.toFixed(1)} в ход, в пике на ${Math.round(r.drainMax)}` : '') +
+      (r.killsIn ? `. Без ответа снял бы тебя за ${hodov(r.killsIn)}, это ${Math.round(r.hitsIn)} разменов` +
+                   (r.rounds ? `, а бой идёт ${hodov(r.rounds)}` : '')
+                 : `. Без ответа ты у него не умираешь — урона не хватает`)]);
   }
-  L.push(['Его темп', r.killsIn
-    ? `если не отвечать — снимает тебя за ${hodov(r.killsIn)}, это ${Math.round(r.hitsIn)} его разменов; бой идёт ${r.rounds ? hodov(r.rounds) : '—'}`
-    : `не отвечая, ты у него не умираешь — урона у него на тебя не хватает`]);
-
-  if (r.swapShare > 5)
-    L.push(['Смена карты', `${Math.round(r.swapShare)}% ходов уходит на вынужденную смену типа — подряд одним больше трёх раз не пустят`]);
 
   if (r.stall > 3)
     L.push(['Не добиваешь', `в ${Math.round(r.stall)}% боёв он не умирает за отведённые ходы` +
