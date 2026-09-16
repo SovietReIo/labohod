@@ -387,6 +387,9 @@
   .brief p{font-size:13px; color:var(--ink-soft); line-height:1.5; margin:0}
   dl.bl{display:grid; grid-template-columns:auto 1fr; gap:3px 10px; margin:0; font-size:12.5px}
   dl.bl dt{font-weight:600; color:var(--ink); white-space:nowrap}
+  pre.blog{margin:10px 0 0; padding:10px 11px; background:var(--sunk); border:1px solid var(--line);
+    font-family:"IBM Plex Mono",monospace; font-size:11px; line-height:1.5; color:var(--ink-soft);
+    max-height:420px; overflow:auto; white-space:pre-wrap; word-break:break-word}
   dl.bl dd i{font-style:normal; font-family:"IBM Plex Mono",monospace; color:var(--brass)}
   dl.bl dd em{font-style:normal; font-size:11.5px; color:var(--ink-faint)}
   dl.bl dd{margin:0; color:var(--ink-soft); line-height:1.45}
@@ -599,7 +602,7 @@
     <dt>Побед</dt><dd>доля выигранных боёв из прогона один на один, при полном здоровье на старте. Зоны жёсткие: <b>76–100</b> зелёная — проходится, <b>51–75</b> жёлтая — с риском, <b>31–50</b> оранжевая — чаще проигрыш, <b>0–30</b> красная — не ходить. Не путать с проходимостью этажа подряд без отдыха.</dd>
     <dt>Ударов моба</dt><dd>сколько его выигранных разменов ты выдерживаешь. В одном размене он делает всё сразу: бьёт последователем, накладывает его заклятие и добавляет магический удар своей школой — а крит от его удачи иногда всё это удваивает. Считается прогоном, где ты вообще не отвечаешь. Разбивку по источникам смотри в разборе строкой «за один свой размен».</dd>
     <dt>Ходов</dt><dd>средняя длина выигранного боя. Короткий бой дешевле по зельям и меньше рискует, длинный — повод посмотреть на урон, а не на защиту.</dd>
-    <dt>Порог</dt><dd>защита, при которой его касты блокируются на 82,5%: два с половиной уровня заклятия, где уровень = 12 плюс его Сила Эффектов. Дойдя до порога, ты не просто блокируешь — моб перестаёт ходить такой картой и берёт другую. Рядом указан тип защиты, по которому он бьёт.</dd>
+    <dt>Порог</dt><dd>защита, при которой его касты блокируются на 82,5%: два с половиной уровня заклятия, где уровень = 12 плюс его Сила Эффектов. Дойдя до порога, ты не просто блокируешь — моб перестаёт выставлять такого последователя и берёт другого. Рядом указан тип защиты, по которому он бьёт.</dd>
     <dt>Твоя защита</dt><dd>что у тебя стоит по этому типу сейчас. Зелёная — порог закрыт, жёлтая — близко, красная — его касты проходят почти свободно.</dd>
   </dl>
   <div id="verdict" class="callout"></div>
@@ -627,11 +630,11 @@
     </div>
     <div class="box">
       <h3>Блок заклятий</h3>
-      <p class="note" style="margin-top:0">33% при защите, равной уровню заклятия, 66% при вдвое большей, 99% при втрое; между узлами линейно. <b>Уровень заклятия = уровень последователя плюс Сила Эффектов кастующего.</b> Отсюда рабочий порог: защита в 2,5 уровня даёт 82,5% блока — и с этого места моб в 95% случаев меняет такую карту на другую, а не тратит ход впустую. <b>Блокируется и собственный бафф, если у него есть тип:</b> «Ревность» — каст дамы, и защита противника от дам снимает её так же, как сняла бы удар по нему. Поэтому разгон физической атаки через власть работает там, где у моба нет защиты от этой власти, а против теней остаются доты и нейтральные касты.</p>
+      <p class="note" style="margin-top:0">33% при защите, равной уровню заклятия, 66% при вдвое большей, 99% при втрое; между узлами линейно. <b>Уровень заклятия = уровень последователя плюс Сила Эффектов кастующего.</b> Отсюда рабочий порог: защита в 2,5 уровня даёт 82,5% блока — и с этого места моб в 95% случаев меняет такого последователя на другого, а не тратит ход впустую. <b>Блокируется и собственный бафф, если у него есть тип:</b> «Ревность» — каст дамы, и защита противника от дам снимает её так же, как сняла бы удар по нему. Поэтому разгон физической атаки через власть работает там, где у моба нет защиты от этой власти, а против теней остаются доты и нейтральные касты.</p>
     </div>
     <div class="box">
       <h3>Крит и эффекты</h3>
-      <p class="note" style="margin-top:0">Крит = 5% плюс 2% за каждый пункт превосходства по Удаче, не выше 99%. Удваивает урон последователя и <b>накладывает заклятие дважды</b>. <b>Эффекты складываются — и доты, и баффы.</b> Каждый удавшийся каст кладёт свой стак на свой срок, и в конце хода тикает каждый живой. Жажда Крови +19, повешенная трижды, даёт +57 к Атаке Хаоса: так пробивают стены вроде Тени Героя, где обычный удар в её 65 защиты не проходит вовсе. Отряд перебирается по кругу с подобранным тактом: дот на 9 ходов достаточно вешать раз в три хода, между ними бьёшь базой. <b>Одним типом карт подряд ходить нельзя:</b> после трёх раз в 85% случаев приходится менять тип — модель считает вынужденные подмены как настоящие ходы. <b>У моба свой отряд из бестиария</b> — поимённо, с настоящими заклятиями: наведи на моба и посмотри. В свой выигранный размен он выставляет одного из них: урон — атака этого последователя плюс атака моба его типа минус твоя защита, заклятие — его собственное, с блоком по своему типу. Никаких выдуманных кастов у мобов больше нет. Тени умеют игнорировать броню и магическую защиту — это записано у них в способности.</p>
+      <p class="note" style="margin-top:0">Крит = 5% плюс 2% за каждый пункт превосходства по Удаче, не выше 99%. Удваивает урон последователя и <b>накладывает заклятие дважды</b>. <b>Эффекты складываются — и доты, и баффы.</b> Каждый удавшийся каст кладёт свой стак на свой срок, и в конце хода тикает каждый живой. Жажда Крови +19, повешенная трижды, даёт +57 к Атаке Хаоса: так пробивают стены вроде Тени Героя, где обычный удар в её 65 защиты не проходит вовсе. Отряд перебирается по кругу с подобранным тактом: дот на 9 ходов достаточно вешать раз в три хода, между ними бьёшь базой. <b>Одним типом подряд ходить нельзя:</b> после трёх раз в 85% случаев приходится менять тип — модель считает вынужденные подмены как настоящие ходы. <b>У моба свой отряд из бестиария</b> — поимённо, с настоящими заклятиями: наведи на моба и посмотри. В свой выигранный размен он выставляет одного из них: урон — атака этого последователя плюс атака моба его типа минус твоя защита, заклятие — его собственное, с блоком по своему типу. Никаких выдуманных кастов у мобов больше нет. Тени умеют игнорировать броню и магическую защиту — это записано у них в способности.</p>
     </div>
   </div>
 </section>
@@ -672,7 +675,7 @@ const crit = (mine, theirs) => Math.max(0, Math.min(0.99, 0.05 + 0.02 * (mine - 
 /* Складывается ВСЁ: и доты, и баффы. Жажда Крови, повешенная трижды,
    даёт тройную величину — на этом и держится раскачка атаки. Подтверждено. */
 function mobReg(m){ return m.reg; }
-/* Подряд одним типом карт ходить нельзя: после трёх раз в 85% случаев
+/* Подряд одним типом ходить нельзя: после трёх раз в 85% случаев
    приходится менять тип — мобы подстраиваются. */
 let MAX_SAME = 3, SWITCH_P = 0.85;
 /* В пачке до тебя дотягиваются только первые трое живых. */
@@ -681,7 +684,7 @@ let REACH = 3;
    только тот бой, что уложился в лимит; лимит задаётся в панели. */
 let MAX_TURNS = 60;
 /* Моб не тратит ход на заклятие, которое почти наверняка блокируется:
-   при шансе блока от 82,5% он в 95% случаев выкладывает другую карту. */
+   при шансе блока от 82,5% он в 95% случаев выставляет другого. */
 let BLOCK_SKIP = 0.825, SKIP_P = 0.95;
 /* Потолка у стаков нет ни у дотов, ни у баффов: сколько наложил, столько
    и работает.
@@ -743,7 +746,7 @@ function mobSquad(m){
   return [{n: m.n, t, l: 12, a: 56}];
 }
 /* Отряд у всех 153 мобов разложен по трём линиям — драконы, рыцари, дамы,
-   ровно как у игрока. В размен идёт карта одного из трёх типов, а внутри
+   ровно как у игрока. В размен идёт последователь одного из трёх типов, а внутри
    линии последователи чередуются по кругу. */
 function mobLines(m){
   const L = {d: [], k: [], l: []};
@@ -862,7 +865,7 @@ function scoreCand(p, f, m){
 /* Заклятие последователя моба впустую? Меряем каждое о твою защиту его типа:
    нейтральное — об Антимагию, ядовитое — о Защиту от Яда, остальные — о защиту
    своей власти или школы (при BLOCK_SELF собственные баффы моба — тоже).
-   Если всё такое снимается с шансом от BLOCK_SKIP — карта пустая. */
+   Если всё такое снимается с шансом от BLOCK_SKIP — последователь пустой. */
 function wasted(mf, e, me){
   const efs = [];
   if (mf.e != null && MOB_EFF[mf.e]) efs.push(MOB_EFF[mf.e]);
@@ -880,6 +883,11 @@ function wasted(mf, e, me){
 }
 
 /* ── один бой ─────────────────────────────────────────────────────────────── */
+/* Журнал боя. Включается снаружи: LOG = [] — и следующий бой запишется
+   ход за ходом. Нужен, чтобы проверять модель глазами, а не верить ей. */
+let LOG = null;
+const lg = (...a) => { if (LOG) LOG.push(a.join(' ')); };
+
 function fight(p, mobs, plan, capOverride){
   const me = {
     atk: Object.assign({}, p.atk),
@@ -931,7 +939,7 @@ function fight(p, mobs, plan, capOverride){
 
     /* ── твой размен ── */
     let f = t.qi < open.length ? open[t.qi] : loop[t.ci % loop.length];
-    /* карту одного типа больше трёх раз подряд не пустят */
+    /* последователя одного типа больше трёх раз подряд не пустят */
     let swapped = false;
     if (f.t === lastT && runN >= MAX_SAME && rnd() < SWITCH_P){
       let g = null;
@@ -951,6 +959,9 @@ function fight(p, mobs, plan, capOverride){
     cards++;
     if (f.t === lastT) runN++; else { lastT = f.t; runN = 1; }
     const tt = PHYS[(rnd()*3)|0];
+    if (LOG) lg(`\nход ${r}   ты ${Math.round(me.hp)} hp   ${t.m.n} ${Math.round(t.s.hp)} hp`);
+    lg(`  ставишь ${f.n} [${PHYS_RU[f.t]}]${swapped ? ' (подмена по типу)' : ''}` +
+       `, у него ${PHYS_RU[tt]} — ` + (beats[f.t] === tt ? 'размен ТВОЙ' : 'мимо'));
     if (beats[f.t] === tt){
       if (!swapped){ if (t.qi < open.length) t.qi++; else t.ci++; }
       const dbl = rnd() < crit(me.luck, t.s.luck) ? 2 : 1;
@@ -960,23 +971,30 @@ function fight(p, mobs, plan, capOverride){
         /* и свой бафф, и удар по врагу меряются о его защиту того же типа */
         const D = (S.f === 1 || BLOCK_SELF) ? spellDef(S, t.s) : null;
         const L = f.l + p.meff;
-        if (D === null || rnd() > block(D, L)){
+        const bl = D === null ? 0 : block(D, L);
+        if (D === null || rnd() > bl){
           for (let q = 0; q < dbl; q++){
             const before = S.f === 1 ? t.s.hp : 0;
             applySpell(side, S, 1);
             if (S.f === 1) dealt.spell += Math.max(0, before - t.s.hp);
             if (S.d < 99) addStack(S.f === 1 ? t.stacks : myStacks, S, side, true);
           }
-        }
+          lg(`    каст «${S.n}» лёг${dbl > 1 ? ' дважды (крит)' : ''}` +
+             (D === null ? '' : `, блок был ${Math.round(bl*100)}%`) +
+             `; стаков этого каста: ${(S.f === 1 ? t.stacks : myStacks).filter(x => x.S === S).length}`);
+        } else lg(`    каст «${S.n}» ЗАБЛОКИРОВАН (шанс блока ${Math.round(bl*100)}%)`);
       }
       const d1 = hit(f.a + me.atk[f.t], t.s.dfn[f.t]) * dbl;
       t.s.hp -= d1; dealt.hit += d1;
+      lg(`    удар ${Math.round(d1)}  (${f.a} у последователя ${me.atk[f.t] >= 0 ? '+' : ''}${Math.round(me.atk[f.t])}` +
+         ` твоей Атаки ${PHYS_RU[f.t]} − ${Math.round(t.s.dfn[f.t])} его защиты${dbl > 1 ? ', крит ×2' : ''})`);
       for (const g of p.mags){
         const A = me.mag[g.k];
         if (A <= 0) continue;
         const lo = Math.min(me.conc * p.mult, A);
         const d2 = hit(lo + rnd() * (A - lo), t.s.dfn[g.k]);
         t.s.hp -= d2; dealt.magic += d2;
+        lg(`    магия ${SCHOOL_RU[g.k]} ${Math.round(d2)}  (бросок из ${Math.round(lo)}–${A} − ${Math.round(t.s.dfn[g.k])} защиты)`);
       }
     }
 
@@ -985,11 +1003,11 @@ function fight(p, mobs, plan, capOverride){
     for (const e of E){
       if (!e.alive) continue;
       if (++reached > REACH) break;
-      /* карта одного из трёх типов, потом следующий в очереди этой линии */
+      /* последователь одного из трёх типов, потом следующий в очереди этой линии */
       const li = (rnd() * e.lines.length) | 0, line = e.lines[li];
       let mf = line[e.li[li]++ % line.length];
       /* заклятие, которое почти наверняка снимут, — выброшенный ход:
-         такую карту моб почти всегда меняет на другую */
+         такого моб почти всегда меняет на другого */
       if (wasted(mf, e, me) && rnd() < SKIP_P){
         let g = null;
         for (let k = 0; k < line.length && !g; k++){
@@ -999,7 +1017,9 @@ function fight(p, mobs, plan, capOverride){
         if (!g) for (const ln of e.lines){ for (const c of ln) if (!wasted(c, e, me)){ g = c; break; } if (g) break; }
         if (g) mf = g;
       }
-      if (beats[mf.t] !== PHYS[(rnd()*3)|0]) continue;        // размен выигран им
+      const mtt = PHYS[(rnd()*3)|0];
+      if (beats[mf.t] !== mtt){ lg(`  он ставит ${mf.n} [${PHYS_RU[mf.t]}] — мимо`); continue; }
+      lg(`  он ставит ${mf.n} [${PHYS_RU[mf.t]}] — размен ЕГО`);
       enemyHits++;                                            // это один его размен
       /* последователь может нести и заклятие, и признак — берём всё */
       const efs = [];
@@ -1021,19 +1041,23 @@ function fight(p, mobs, plan, capOverride){
         for (const act of ef.a){
           const onMe = act.f === 1;
           const side = onMe ? me : e.s;
-          if ((onMe || BLOCK_SELF) && D !== null && rnd() <= block(D, L)) continue;   // заблокировано
+          const bl = (onMe || BLOCK_SELF) && D !== null ? block(D, L) : 0;
+          if (bl && rnd() <= bl){ lg(`    его каст «${ef.n}» ты СНЯЛ (блок ${Math.round(bl*100)}%)`); continue; }
           for (let q = 0; q < d2; q++){
             const h0 = me.hp;
             applySpell(side, act, 1);
             if (onMe && me.hp < h0) taken.spell += h0 - me.hp;
             if (act.d < 99) addStack(onMe ? myStacks : e.stacks, act, side, true);
           }
+          lg(`    его каст «${ef.n}» прошёл${d2 > 1 ? ' ×' + d2 + ' (крит)' : ''}` +
+             (bl ? `, блок был ${Math.round(bl*100)}%` : ', блокировать нечем'));
         }
       }
       /* удар: атака последователя плюс атака моба этого типа */
       const raw = mf.a + e.s.atk[mf.t];
       if (raw > 0){ const dm = hit(raw, pierceA ? 0 : me.dfn[mf.t]) * d2;
-        if (dm > 0){ me.hp -= dm; taken.hit += dm; } }
+        if (dm > 0){ me.hp -= dm; taken.hit += dm;
+          lg(`    его удар ${Math.round(dm)}  (${raw} − ${pierceA ? '0, броня пробита' : Math.round(me.dfn[mf.t]) + ' твоей защиты'}${d2 > 1 ? ', крит ×' + d2 : ''})`); } }
       /* магические удары моба — по одному за каждую его школу */
       for (const k of e.mschs){
         const A = e.s.mag[k];
@@ -1041,6 +1065,7 @@ function fight(p, mobs, plan, capOverride){
         const lo = Math.min(e.s.conc * 2, A);
         const dm = hit(lo + rnd() * (A - lo), pierceM ? 0 : me.dfn[k]);
         me.hp -= dm; taken.magic += dm;
+        lg(`    его магия ${SCHOOL_RU[k]} ${Math.round(dm)}  (бросок из ${Math.round(lo)}–${A} − ${pierceM ? '0, защита пробита' : Math.round(me.dfn[k]) + ' твоей защиты'})`);
       }
     }
 
@@ -1061,6 +1086,15 @@ function fight(p, mobs, plan, capOverride){
     me.hp = Math.min(me.maxhp, me.hp + me.reg);
     for (let k = myStacks.length - 1; k >= 0; k--)
       if (--myStacks[k].left <= 0){ applySpell(myStacks[k].side, myStacks[k].S, -1); myStacks.splice(k,1); }
+    if (LOG){
+      const dot = Math.max(0, mobReg(t.m) - t.s.reg);
+      lg(`  конец хода: ему ${t.s.reg >= 0 ? '+' : ''}${Math.round(t.s.reg)} жизни` +
+         (dot > 0 ? ` (твои доты держат его восстановление на ${Math.round(dot)} ниже)` : '') +
+         `, тебе ${me.reg >= 0 ? '+' : ''}${Math.round(me.reg)}` +
+         (p.reg - me.reg > 0 ? ` (просажено на ${Math.round(p.reg - me.reg)})` : '') +
+         `.  Твои стаки: ${myStacks.length}, на нём: ${t.stacks.length}` +
+         `.  Твоя Атака ${PHYS_RU.k} ${Math.round(me.atk.k)}`);
+    }
 
     if (E.every(e => !e.alive)) return {win:1, rounds:r, E, dealt, taken, peak, start, drain:drainSum/r, drainMax, php:me.hp, left:0, swaps, cards, enemyHits};
     if (me.hp <= 0) return {win:0, rounds:r, E, dealt, taken, peak, start, drain:drainSum/r, drainMax, php:0, left:prog(), swaps, cards, enemyHits};
@@ -1147,6 +1181,36 @@ function choosePlan(p, list, probe){
       comp(scorePlan(p, list, {open: [], loop: [f], base}, half)))}))
     .sort((x, y) => y.v - x.v);
   let pool = rank.slice(0, 5).map(x => x.f);
+
+  /* Связки, которые окупаются только вместе.
+     Жадный перебор берёт лучшего одиночку и дальше пристраивает к нему второго.
+     Но дот на драконе и дот на рыцаре поодиночке слабее разгона, а вдвоём
+     сильнее: с двумя типами дот ложится почти на каждый выигранный размен, а
+     не на треть. Такую пару жадность не находит никогда — до неё надо пройти
+     через слабый первый шаг. Поэтому пары и тройки РАЗНЫХ типов из шести
+     лучших кандидатов пробуем отдельно, до жадного перебора. */
+  {
+    const seeds = rank.slice(0, 6).map(x => x.f);
+    const combos = [];
+    for (let i = 0; i < seeds.length; i++)
+      for (let j = i + 1; j < seeds.length; j++){
+        if (seeds[i].t === seeds[j].t) continue;
+        combos.push([seeds[i], seeds[j]]);
+        for (let k = j + 1; k < Math.min(seeds.length, 4); k++)
+          if (seeds[k].t !== seeds[i].t && seeds[k].t !== seeds[j].t)
+            combos.push([seeds[i], seeds[j], seeds[k]]);
+      }
+    for (const c of combos){
+      const tr = {open: [], loop: c, base, alt};
+      const sc = scorePlan(p, list, tr, probe);
+      if (betterThan(sc, best)){ best = sc; plan = tr; }
+    }
+    if (plan.loop.length > 1){
+      shortlist.push(plan);
+      pool = pool.filter(f => plan.loop.indexOf(f) < 0);
+    }
+  }
+
   for (let step = 0; step < 4 && pool.length; step++){
     let bestP = null, bestS = best, bestI = -1;
     for (let i = 0; i < pool.length; i++){
@@ -1203,7 +1267,7 @@ function choosePlan(p, list, probe){
   return plan;
 }
 
-/* Чем именно работает заклятие карты — имя и набор задеваемых полей.
+/* Чем именно работает заклятие последователя — имя и набор задеваемых полей.
    По ним и ищем родню того же типа: ядовитой ходовке в подмены нужен яд
    другого типа, а не самый больно бьющий. */
 const spellFam = f => f.s ? Object.keys(f.s.v).sort().join(',') + '|' + f.s.f : null;
@@ -1221,7 +1285,6 @@ function tuneAlt(p, list, plan, boss, probe, R){
       const v = scoreCand(p, f, boss); if (v > bv){ bv = v; b = f; } }
     return b; };
   const kin = {}, top = {};
-  let ringInfo = null;
   for (const q of PHYS){
     const same = R.filter(f => f.t === q);
     if (!same.length) continue;
@@ -1235,46 +1298,27 @@ function tuneAlt(p, list, plan, boss, probe, R){
   const n2 = Math.max(700, probe * 3);
   const meas = pl => { const a = scorePlan(p, list, pl, n2, 90210), b = scorePlan(p, list, pl, n2, 31337);
                        return {w:(a.w+b.w)/2, r:(a.r+b.r)/2}; };
-  /* Ровное кольцо по типам: три дамы, три рыцаря, три дракона. Играется
-     по-настоящему, поэтому меряем его наравне с остальными, а не отбрасываем. */
-  const ringCards = [];
-  for (const q of PHYS){ const f = kin[q] || top[q];
-    if (f) for (let i = 0; i < MAX_SAME; i++) ringCards.push(f); }
-  const ring = ringCards.length >= MAX_SAME * 2
-    ? {open: plan.open, loop: ringCards, base: plan.base, alt: Object.assign({}, plan.alt, kin)}
-    : null;
-
   let best = plan, bs = meas(plan);
-  const tried = [];
   for (const cand of [kin, top]){
     const alt2 = Object.assign({}, plan.alt, cand);
     if (PHYS.every(q => alt2[q] === plan.alt[q])) continue;
-    tried.push({open: plan.open, loop: plan.loop, base: plan.base, alt: alt2});
-  }
-  if (ring) tried.push(ring);
-  for (const tr of tried){
+    const tr = {open: plan.open, loop: plan.loop, base: plan.base, alt: alt2};
     const s = meas(tr);
-    if (tr === ring){
-      const real = winOf(p, list, ring, 400, 90210);
-      ringInfo = {w: real.w, r: real.r, cards: ringCards};
-    }
     /* Берём лучшее из нескольких, а значит ловим и проклятие победителя:
        вариант, которому повезло на зонде, на боевом зерне отыгрывает назад.
        Поэтому не просто «лучше», а лучше с запасом. */
     if (s.w > bs.w + 1.5 || (s.w > bs.w - 0.4 && s.r < bs.r - 3)){ best = tr; bs = s; }
   }
-  if (ringInfo) ringInfo.chosen = best === ring;
-  best.ring = ringInfo;
   return best;
 }
 
-/* Карта на живучесть: свой реген или лечение. Именно ими откупаются от мобов,
+/* Последователь на живучесть: свой реген или лечение. Именно ими откупаются от мобов,
    которые много снимают за размен. */
 const healCard = f => {
   const S = f.s; if (!S || S.f === 1) return false;
   return (S.v.regen_hp > 0) || (S.v.hp_now > 0) || (S.v.max_hp > 0);
 };
-/* Вариант «если много бьют»: та же ходовка плюс реген-карта в круг.
+/* Вариант «если много бьют»: та же ходовка плюс реген-последователь в круг.
    Возвращаем замер, а не совет наугад. */
 function healOption(p, list, plan, probe){
   const R = roster(p);
@@ -1294,7 +1338,7 @@ function healOption(p, list, plan, probe){
 
 /* Как реально лягут ходы: круг плюс вынужденные подмены по типу.
    Показываем ход как сыгранный — очередь в бою двигается только на
-   выигранном размене, но порядок карт от этого не меняется. */
+   выигранном размене, но порядок от этого не меняется. */
 function moveChain(plan, n){
   const open = plan.open, loop = plan.loop.length ? plan.loop : [plan.base];
   const alt = plan.alt || {};
@@ -1893,16 +1937,37 @@ function run(){
         : worst < 80
         ? `Этаж проходится, но с провалом на одном мобе. Порог в его строке — то число, до которого стоит добрать защиту.`
         : `Этаж закрыт целиком. Можно смотреть следующий по глубине.`);
+    LOGCASE = ms.map((m, i) => ({m, plan: res[i].plan, p}));
     $('briefs').innerHTML = ms.map((m, i) =>
       `<div class="brief"><h4>${m.n} <span>${Math.round(wins[i])}% · ${
         rounds[i] ? hodov(rounds[i]) : 'не побеждается'}</span></h4>
-       ${briefHTML(briefFor(m, res[i], p))}</div>`).join('');
+       ${briefHTML(briefFor(m, res[i], p))}
+       ${res[i].empty ? '' : `<div class="fbtns"><button class="btn2" data-log="${i}">показать бой</button></div>
+       <pre class="blog hidden" id="blog${i}"></pre>`}</div>`).join('');
+    for (const el of $('briefs').querySelectorAll('[data-log]')) el.onclick = () => showFight(+el.dataset.log);
     $('resWrap').classList.remove('hidden');
     if ($('chainOn').checked) runTheChain(p, n); else $('chainWrap').classList.add('hidden');
     $('status').textContent = '';
   }, 20);
 }
 
+
+/* ── журнал боя: один настоящий бой ход за ходом ───────────────────────────
+   Нужен, чтобы любой спорный процент можно было проверить глазами, а не
+   верить на слово. Каждое нажатие — новый бой, зерно своё. */
+let LOGCASE = [], _logSeed = 1000;
+function showFight(i){
+  const c = LOGCASE[i]; if (!c) return;
+  const box = $('blog' + i);
+  LOG = [];
+  seed(++_logSeed);
+  const r = fight(c.p, [c.m], c.plan, 300);
+  const head = `${c.m.n}: ${r.win ? 'ПОБЕДА' : 'поражение'} за ${r.rounds} ${hodov(r.rounds).split(' ')[1] || 'ходов'}` +
+               `\nбой №${_logSeed - 1000}, ходовка та же, что в разборе\n`;
+  box.textContent = head + LOG.join('\n');
+  LOG = null;
+  box.classList.remove('hidden');
+}
 
 /* ── разбор: что делать против каждого моба ───────────────────────────────── */
 function briefFor(m, r, p){
@@ -1914,9 +1979,9 @@ function briefFor(m, r, p){
     L.push(['Открываем', r.plan.open.map(follName).join(', ') +
       ' — это один раз в начале боя, дальше к ним не возвращаемся']);
 
-  /* карту одного типа больше трёх раз подряд не пустят, поэтому ходовка —
-     это не один последователь, а свой на каждый тип. Берём только те типы,
-     что реально выходят в круг. */
+  /* последователя одного типа больше трёх раз подряд не пустят, поэтому
+     ходовка — это не один последователь, а свой на каждый тип. Берём только
+     те типы, что реально выходят в круг. */
   const chain = moveChain(r.plan, 14);
   const byType = {};   /* вступление сюда не идёт — оно играется один раз */
   for (const c of chain) if (!c.open && !byType[c.f.t]) byType[c.f.t] = c.f;
@@ -1924,7 +1989,7 @@ function briefFor(m, r, p){
   if (order.length)
     L.push(['Кем ходим', order.map(q => `<b>${PHYS_RU[q].toLowerCase()}</b> — ${follName(byType[q])}`).join('; ') +
       (order.length > 1
-        ? '. Подряд одним типом больше трёх раз не дадут, так что круг всё равно пойдёт по типам — держи под рукой карту на каждый'
+        ? '. Подряд одним типом больше трёх раз не дадут, так что круг всё равно пойдёт по типам — держи под рукой последователя на каждый'
         : '. Другого типа под эту задачу в отряде нет')]);
 
   /* сворачиваем повторы: читается как ритм, а не как список */
@@ -1934,14 +1999,6 @@ function briefFor(m, r, p){
     if (last && last.f === c.f) last.k++;
     else runs.push({f: c.f, k: 1, swapped: c.swapped, open: c.open});
   }
-  const ring = r.plan.ring;
-  if (ring && !ring.chosen && ring.w > 0){
-    const names = [...new Set(ring.cards.map(f => f.n))];
-    L.push(['Ровное кольцо', `если удобнее ходить по три подряд каждым типом — ` +
-      names.join(', ') + ` — выходит ${Math.round(ring.w)}% против ${Math.round(r.win)}%. ` +
-      (r.win - ring.w > 4 ? 'Разница заметная, кольцо тут дороже' : 'Разница невелика, играй как удобнее')]);
-  }
-
   L.push(['Как лягут ходы', runs.slice(0, 7).map(x =>
       x.f.n + (x.k > 1 ? ` <i>×${x.k}</i>` : '') + (x.open ? ' <em>(вступление)</em>' : '')
     ).join(' → ') + ' → …']);
