@@ -172,7 +172,8 @@
   
   /* ══ переодевалка: четыре колонки, как в игре ═══════════════════════════ */
   .dress{display:grid; gap:12px; margin-top:18px; align-items:start;
-    grid-template-columns:188px 318px 264px minmax(280px,1fr)}
+    grid-template-columns:minmax(150px,0.78fr) minmax(250px,1.2fr)
+                          minmax(210px,0.98fr) minmax(230px,1.3fr)}
   .dcol{display:flex; flex-direction:column; gap:12px; min-width:0}
   .dbox{background:var(--panel); border:1px solid var(--line); padding:11px 12px}
   .dbox.nopad{padding:0; display:flex; flex-direction:column; max-height:74vh}
@@ -283,7 +284,7 @@
   .plaw b{font-family:"IBM Plex Mono",monospace; font-weight:600}
   .plaw b.ok{color:var(--ok)} .plaw b.warn{color:var(--brass)}
   .plaw em{font-style:normal; color:var(--brass)}
-  .army{display:flex; flex-wrap:wrap; gap:3px; margin-top:8px; max-height:200px; overflow-y:auto; overflow-x:hidden;
+  .army{display:flex; flex-wrap:wrap; gap:3px; margin-top:8px; max-height:150px; overflow-y:auto; overflow-x:hidden;
     border-top:1px solid var(--line); padding:4px 0 2px;
     -webkit-mask-image:linear-gradient(#000 calc(100% - 14px), transparent);
     mask-image:linear-gradient(#000 calc(100% - 14px), transparent)}
@@ -387,6 +388,15 @@
   .brief p{font-size:13px; color:var(--ink-soft); line-height:1.5; margin:0}
   dl.bl{display:grid; grid-template-columns:auto 1fr; gap:3px 10px; margin:0; font-size:12.5px}
   dl.bl dt{font-weight:600; color:var(--ink); white-space:nowrap}
+  .byt{display:grid; gap:2px}
+  .byt span{display:grid; grid-template-columns:62px 1fr; gap:8px; align-items:baseline}
+  .byt i{font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:10px;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--brass)}
+  details#armyWrap{margin-top:8px}
+  details#armyWrap > summary{cursor:pointer; font-size:12.5px; color:var(--brass); list-style:none}
+  details#armyWrap > summary::-webkit-details-marker{display:none}
+  details#armyWrap > summary::before{content:'▸ '; font-size:10px}
+  details#armyWrap[open] > summary::before{content:'▾ '}
   pre.blog{margin:10px 0 0; padding:10px 11px; background:var(--sunk); border:1px solid var(--line);
     font-family:"IBM Plex Mono",monospace; font-size:11px; line-height:1.5; color:var(--ink-soft);
     max-height:420px; overflow:auto; white-space:pre-wrap; word-break:break-word}
@@ -466,17 +476,12 @@
         <div class="hint" id="panelHint">Столбец правки складывается поверх вещей, зелий и эффектов. Уровень, здоровье, Сила, Ум, власти и магии — это своё, вложенное очками.</div>
       </div>
       <div class="dbox">
-        <h4>Отряд <span id="armyCount" class="hint"></span></h4>
-        <div class="hint" style="margin-bottom:6px">Последователи берутся из энциклопедии по твоему уровню, магиям, властям и гильдиям. Один размен — один последователь.</div>
+        <h4>Гильдии</h4>
         <div id="guilds" class="gchips"></div>
-        <div id="army" class="army"></div>
-        <h4 style="margin-top:12px">Модель</h4>
-        <div class="fld"><label>Боёв на моба</label><input type="number" id="iters" value="5000" min="1" step="500"></div>
-        <div class="fld"><label>Лимит ходов на моба</label><input type="number" id="maxTurns" value="60" min="5" step="5"></div>
-        <label class="chk" style="margin-top:6px"><input type="checkbox" id="allTypes" checked> Ходить всеми тремя типами</label>
-        <div class="hint"><b>Последователи расходуются</b>, поэтому двумя весь бой не отходишь — круг обязан разойтись по всем трём типам, и подбор ставит своего последователя на каждый. Снимешь галку — покажу математически лучшую ходовку, даже если она обходится двумя типами.<br><br>Подбор считает удачей только тот бой, что уложился в лимит: победа за 40 ходов и победа за 200 — разные вещи. Поставь свой предел терпения по зельям.<br><br>
-        Заклятие работает с хода, на котором наложено: «на 9 ходов» — это ход каста плюс девять следующих, десять тиков.<br><br>
-        Стаки не ограничены ничем: и доты, и баффы копятся сколько наложишь. Святое Оружие +21, повешенное шесть раз, разгоняет Атаку Рыцарей с 15 до 141 — именно так это и работает в игре.</div>
+        <details id="armyWrap">
+          <summary>Отряд <span id="armyCount"></span></summary>
+          <div id="army" class="army"></div>
+        </details>
       </div>
     </div>
 
@@ -777,7 +782,11 @@ function roster(p){
   const out = [], byKey = {};
   for (const f of FOLLOWERS){
     if (!canField(p, f)) continue;
-    const key = f.s ? f.s.n : 'база|' + f.t;
+    /* Ключ — заклятие И ТИП. Раньше ключом было одно имя заклятия, и из трёх
+       «Ядов» — дракона, рыцаря и дамы — в отряде оставался ровно один. Круг
+       нельзя было собрать на одном яде, приходилось подставлять Огни Ада,
+       которые блокируются Защитой от Хаоса, а не от Яда. */
+    const key = (f.s ? f.s.n : 'база') + '|' + f.t;
     const cur = byKey[key];
     if (!cur || f.l > cur.l || (f.l === cur.l && f.a > cur.a)) byKey[key] = f;
   }
@@ -1154,8 +1163,11 @@ function scorePlan(p, list, plan, n, sd){
   }
   const lost = n - w;
   const near = lost ? (1 - left / lost) : 1;
-  /* главное — победы в лимит; сырые победы идут десятой долей, чтобы не потеряться совсем */
-  const v = {w: wc / n * 100 + (w - wc) / n * 10 + near * 0.9, r: rs / n};
+  /* Главное — ПОБЕДЫ, потому что именно они стоят в таблице. Скорость идёт
+     добавкой: за победу в лимит десятая доля сверху. Раньше было наоборот —
+     вес 100 у побед в лимит и 10 у остальных, — и подбор выбирал план на 40%
+     побед вместо плана на 65%, лишь бы бои были короче. */
+  const v = {w: w / n * 100 + wc / n * 10 + near * 0.9, r: rs / n};
   _memo.set(key, v);
   return v;
 }
@@ -1168,7 +1180,15 @@ function choosePlan(p, list, probe){
   const R = roster(p);
   if (!R.length) return {open:[], loop:[], base:{n:'—', t:'k', l:1, a:0}, alt:{}, cands:[]};
   const boss = list.reduce((a,b) => b.hp > a.hp ? b : a, list[0]);
-  const scored = R.map(f => ({f, v: scoreCand(p, f, boss)})).sort((a,b) => b.v - a.v);
+  /* В отряде теперь по одному заклятию на каждый тип — три «Яда», три «Огня».
+     В перебор их всех пускать нельзя: пятёрка лучших кандидатов забьётся
+     роднёй, и настоящие альтернативы туда не попадут. Поэтому кандидатов
+     отбираем по одному на заклятие, а остальные типы того же заклятия
+     подставит coverTypes — он ищет родню как раз по имени. */
+  const seen1 = new Set();
+  const scored = R.map(f => ({f, v: scoreCand(p, f, boss)})).sort((a,b) => b.v - a.v)
+    .filter(x => { const k = x.f.s ? x.f.s.n : 'база';
+                   if (seen1.has(k)) return false; seen1.add(k); return true; });
   /* лучший чистый удар — им и держим ротацию по умолчанию */
   let base = R[0], bd = -Infinity;
   for (const f of R){
@@ -1205,6 +1225,7 @@ function choosePlan(p, list, probe){
      не на треть. Такую пару жадность не находит никогда — до неё надо пройти
      через слабый первый шаг. Поэтому пары и тройки РАЗНЫХ типов из шести
      лучших кандидатов пробуем отдельно, до жадного перебора. */
+  const rings = [];
   {
     const seeds = rank.slice(0, 6).map(x => x.f);
     const combos = [];
@@ -1216,15 +1237,40 @@ function choosePlan(p, list, probe){
           if (seeds[k].t !== seeds[i].t && seeds[k].t !== seeds[j].t)
             combos.push([seeds[i], seeds[j], seeds[k]]);
       }
+    /* В один заход меряем и одиночек, и связки. Раньше связки сравнивались
+       только с планом «одна база», побеждали — и их участники выбывали из
+       пула, из-за чего одиночка, который сильнее связки, больше не
+       проверялся никогда. */
+    for (const f of seeds) combos.push([f]);
+    /* Кольцо одного заклятия по всем типам: яд драконом, ядом рыцарем, ядом
+       дамой. Против магов это обычно сильнейшее, что есть, — дот ложится в
+       каждый выигранный размен и блокируется одной защитой, а не тремя
+       разными. Жадный перебор сюда не доходит: поодиночке ядовитый рыцарь с
+       атакой 8 выглядит слабее чистого ударника с атакой 56. */
+    for (const f of seeds){
+      if (!f.s) continue;
+      const fam = R.filter(g => g.s && g.s.n === f.s.n);
+      const byT = {};
+      for (const g of fam) if (!byT[g.t] || g.l > byT[g.t].l) byT[g.t] = g;
+      const ring = PHYS.map(q => byT[q]).filter(Boolean);
+      if (ring.length > 1 && !combos.some(c => c.length === ring.length && c.every((x,i) => x === ring[i]))){
+        combos.push(ring);
+        rings.push({open: [], loop: ring, base, alt});
+      }
+    }
     for (const c of combos){
       const tr = {open: [], loop: c, base, alt};
       const sc = scorePlan(p, list, tr, probe);
       if (betterThan(sc, best)){ best = sc; plan = tr; }
     }
-    if (plan.loop.length > 1){
+    if (plan.loop[0] !== base){
       shortlist.push(plan);
       pool = pool.filter(f => plan.loop.indexOf(f) < 0);
     }
+    /* Кольца одного заклятия отправляем в финал независимо от того, выиграли
+       ли они короткий зонд: разница тут бывает в пять пунктов, а зонд её
+       путает. Финал меряет вчетверо длиннее и на двух зёрнах. */
+    for (const rg of rings) if (rg !== plan) shortlist.push(rg);
   }
 
   for (let step = 0; step < 4 && pool.length; step++){
@@ -1324,9 +1370,15 @@ function coverTypes(p, list, plan, boss, probe, R){
   const n2 = Math.max(700, probe * 3);
   const meas = pl => { const a = scorePlan(p, list, pl, n2, 90210), b = scorePlan(p, list, pl, n2, 31337);
                        return {w:(a.w+b.w)/2, r:(a.r+b.r)/2}; };
+  /* Смотреть надо на РЕАЛЬНУЮ ротацию, а не на состав круга. Круг из одного
+     последователя сам разойдётся по трём типам вынужденными подменами — и это
+     лучше, чем круг из трёх: сильнейший выходит три хода из четырёх, а не один
+     из трёх. Дырка бывает ровно в одном случае: два последователя разных типов
+     чередуются, три подряд не набегает, подмена не срабатывает никогда. */
   let cur = plan;
+  const shown = pl => new Set(moveChain(pl, 14).filter(c => !c.open).map(c => c.f.t));
   for (const q of PHYS){
-    if (cur.loop.some(f => f.t === q)) continue;
+    if (shown(cur).has(q)) continue;
     /* три претендента на пустой тип: родня по механизму, лучший по общей мерке
        и просто самый больно бьющий этого типа — последний нужен, потому что в
        дырку часто выгоднее поставить чистый удар, а не слабый каст */
@@ -1957,9 +2009,8 @@ function runTheChain(p, n){
 
 /* ── основной прогон ──────────────────────────────────────────────────────── */
 function run(){
-  MAX_TURNS = Math.max(5, val('maxTurns') || 60);
-  ALL_TYPES = $('allTypes').checked;
-  const p = readPlayer(), n = Math.max(1, val('iters'));
+  MAX_TURNS = 60;
+  const p = readPlayer(), n = ITERS;
   const ms = currentMobs();
   if (!ms.length) return;
   $('status').textContent = 'считаю…';
@@ -2008,6 +2059,10 @@ function run(){
 }
 
 
+/* Пользователю тут крутить нечего: пять тысяч боёв на моба и предел терпения
+   в шестьдесят ходов — разумные значения, а не настройки. */
+const ITERS = 5000;
+
 /* ── журнал боя: один настоящий бой ход за ходом ───────────────────────────
    Нужен, чтобы любой спорный процент можно было проверить глазами, а не
    верить на слово. Каждое нажатие — новый бой, зерно своё. */
@@ -2043,12 +2098,8 @@ function briefFor(m, r, p){
   for (const c of chain) if (!c.open && !byType[c.f.t]) byType[c.f.t] = c.f;
   const order = PHYS.filter(q => byType[q]);
   if (order.length)
-    L.push(['Кем ходим', order.map(q => `<b>${PHYS_RU[q].toLowerCase()}</b> — ${follName(byType[q])}`).join('; ') +
-      (order.length > 2
-        ? '. Последователи расходуются, двумя весь бой не отходишь — круг идёт по всем трём'
-        : order.length > 1
-        ? '. Третьего типа под эту задачу в отряде нет — круг пойдёт двумя'
-        : '. Другого типа под эту задачу в отряде нет')]);
+    L.push(['Кем ходим', '<span class="byt">' + order.map(q =>
+      `<span><i>${PHYS_RU[q].toLowerCase()}</i>${follName(byType[q])}</span>`).join('') + '</span>', 1]);
 
   /* сворачиваем повторы: читается как ритм, а не как список */
   const runs = [];
@@ -2098,10 +2149,14 @@ function briefFor(m, r, p){
     L.push(['Заклятий по тебе нет', 'В его отряде только удар' +
       (pierce ? ', но он идёт мимо брони — защита не спасает, спасает скорость' : ' — защита работает в полную силу')]);
   } else {
-    const th = threat(m), need = Math.round(2.5 * (FOLLOWER_LVL + m.eff)), have = defOf(p, th);
+    const th = threat(m), L0 = FOLLOWER_LVL + m.eff;
+    const need = Math.round(2.5 * L0), have = defOf(p, th);
+    const now = Math.round(block(have, L0) * 100);
     L.push(have < need
-      ? ['Дыра', `Защита ${DEF_RU[th]} ${have} против порога ${need} — его касты проходят. Добрать ${need - have}`]
-      : ['Порог закрыт', `Защита ${DEF_RU[th]} ${have} при пороге ${need} — его касты в основном блокируются`]);
+      ? ['Дыра', `Защита ${DEF_RU[th]} ${have} против порога ${need}: сейчас снимаешь <b>${now}%</b> его кастов, ` +
+                 `остальные проходят. Добрать ${need - have} — и будет 82,5%, после чего он перестанет этим ходить`]
+      : ['Порог закрыт', `Защита ${DEF_RU[th]} ${have} при пороге ${need}: снимаешь <b>${now}%</b> его кастов, ` +
+                         `и такого последователя он почти не выставляет`]);
   }
 
   if (r.perEx){
@@ -2130,8 +2185,8 @@ function briefFor(m, r, p){
 
   return L;
 }
-const briefHTML = L => `<dl class="bl">` + L.map(([k, v]) =>
-  `<dt>${k}</dt><dd>${v}.</dd>`).join('') + `</dl>`;
+const briefHTML = L => `<dl class="bl">` + L.map(([k, v, raw]) =>
+  `<dt>${k}</dt><dd>${v}${raw ? '' : '.'}</dd>`).join('') + `</dl>`;
 
 /* ── список доступного отряда ─────────────────────────────────────────────── */
 function showArmy(){
@@ -2148,7 +2203,7 @@ function showArmy(){
         f.r ? ' · ' + Object.entries(f.r).map(([k,v]) => (REQ_RU[k]||k) + ' ' + v).join(', ') : ''}">` +
         `<i>${f.l}</i>${f.n}<u>${f.a}</u>${f.s ? '<em>' + f.s.n + '</em>' : ''}</span>`).join('');
   }).join('');
-  $('armyCount').textContent = `${R.length} доступно`;
+  $('armyCount').textContent = `— ${R.length} доступно`;
 }
 
 /* ── предельная ценность ──────────────────────────────────────────────────── */
@@ -2178,10 +2233,9 @@ function bumped(p, key, v){
   return q;
 }
 function marg(){
-  MAX_TURNS = Math.max(5, val('maxTurns') || 60);
-  ALL_TYPES = $('allTypes').checked;
+  MAX_TURNS = 60;
   const p = readPlayer(), ms = currentMobs();
-  const n = Math.max(1, Math.round(val('iters') / 4));
+  const n = Math.round(ITERS / 4);
   if (!ms.length) return;
   $('status').textContent = 'меряю цену характеристик…';
   setTimeout(() => {
