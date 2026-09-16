@@ -473,7 +473,8 @@
         <h4 style="margin-top:12px">Модель</h4>
         <div class="fld"><label>Боёв на моба</label><input type="number" id="iters" value="5000" min="1" step="500"></div>
         <div class="fld"><label>Лимит ходов на моба</label><input type="number" id="maxTurns" value="60" min="5" step="5"></div>
-        <div class="hint">Подбор считает удачей только тот бой, что уложился в лимит: победа за 40 ходов и победа за 200 — разные вещи. Поставь свой предел терпения по зельям.<br><br>
+        <label class="chk" style="margin-top:6px"><input type="checkbox" id="allTypes" checked> Ходить всеми тремя типами</label>
+        <div class="hint"><b>Последователи расходуются</b>, поэтому двумя весь бой не отходишь — круг обязан разойтись по всем трём типам, и подбор ставит своего последователя на каждый. Снимешь галку — покажу математически лучшую ходовку, даже если она обходится двумя типами.<br><br>Подбор считает удачей только тот бой, что уложился в лимит: победа за 40 ходов и победа за 200 — разные вещи. Поставь свой предел терпения по зельям.<br><br>
         Заклятие работает с хода, на котором наложено: «на 9 ходов» — это ход каста плюс девять следующих, десять тиков.<br><br>
         Стаки не ограничены ничем: и доты, и баффы копятся сколько наложишь. Святое Оружие +21, повешенное шесть раз, разгоняет Атаку Рыцарей с 15 до 141 — именно так это и работает в игре.</div>
       </div>
@@ -626,7 +627,7 @@
   <div class="cols">
     <div class="box">
       <h3>Ход боя</h3>
-      <p class="note" style="margin-top:0">Кольцо камень-ножницы-бумага: Дракон бьёт Даму, Дама — Рыцаря, Рыцарь — Дракона. <b>Каст, удар и магия идут только в выигранный размен</b> — подтверждено логом боя. Ничья не даёт ничего никому. Магический удар наносится <b>отдельно каждой прокачанной магией</b>. Урон за победу — база последователя 56 плюс своя Атака типа минус чужая Защита типа. <b>Защита, пробитая в минус, добавляет случайную величину от 0 до своего модуля</b> — и к обычному удару, и к магическому.</p>
+      <p class="note" style="margin-top:0">Кольцо камень-ножницы-бумага: Дракон бьёт Даму, Дама — Рыцаря, Рыцарь — Дракона. <b>Размен решается одним сравнением: твой последователь против его.</b> Одинаковый тип — ничья, никто ничего не делает; броска нет вовсе. <b>Каст, удар и магия идут только в выигранный размен</b> — и то, и другое подтверждено логом боя «Лиги Героев». Магический удар наносится <b>отдельно каждой прокачанной магией</b>. Урон за победу — база последователя 56 плюс своя Атака типа минус чужая Защита типа. <b>Защита, пробитая в минус, добавляет случайную величину от 0 до своего модуля</b> — и к обычному удару, и к магическому.</p>
     </div>
     <div class="box">
       <h3>Блок заклятий</h3>
@@ -937,6 +938,34 @@ function fight(p, mobs, plan, capOverride){
     if (target >= E.length) return {win:1, rounds:r-1, E, dealt, taken, peak, start, drain:drainSum/Math.max(1,r-1), drainMax, php:me.hp, left:0, swaps, cards, enemyHits};
     const t = E[target];
 
+    /* ── Кто что выставил. Размен решается ОДНИМ сравнением: твой последователь
+       против его. Одинаковый тип — ничья, никто ничего не делает. Проверено по
+       логу боя «Лиги Героев»: «не может съесть», «не может победить», «не может
+       очаровать» — это именно совпадение типов. Броска тут нет вовсе. ── */
+    const FIELD = [];
+    {
+      let reached = 0;
+      for (const e of E){
+        if (!e.alive) continue;
+        if (++reached > REACH) break;
+        /* последователь одного из трёх типов, потом следующий в очереди этой линии */
+        const li = (rnd() * e.lines.length) | 0, line = e.lines[li];
+        let mf = line[e.li[li]++ % line.length];
+        /* заклятие, которое почти наверняка снимут, — выброшенный ход:
+           такого моб почти всегда меняет на другого */
+        if (wasted(mf, e, me) && rnd() < SKIP_P){
+          let g = null;
+          for (let k = 0; k < line.length && !g; k++){
+            const c = line[(e.li[li] + k) % line.length];
+            if (!wasted(c, e, me)) g = c;
+          }
+          if (!g) for (const ln of e.lines){ for (const c of ln) if (!wasted(c, e, me)){ g = c; break; } if (g) break; }
+          if (g) mf = g;
+        }
+        FIELD.push({e, mf});
+      }
+    }
+
     /* ── твой размен ── */
     let f = t.qi < open.length ? open[t.qi] : loop[t.ci % loop.length];
     /* последователя одного типа больше трёх раз подряд не пустят */
@@ -958,11 +987,14 @@ function fight(p, mobs, plan, capOverride){
     }
     cards++;
     if (f.t === lastT) runN++; else { lastT = f.t; runN = 1; }
-    const tt = PHYS[(rnd()*3)|0];
+    const tf = (FIELD.find(x => x.e === t) || {}).mf;
+    const tt = tf ? tf.t : null;
     if (LOG) lg(`\nход ${r}   ты ${Math.round(me.hp)} hp   ${t.m.n} ${Math.round(t.s.hp)} hp`);
     lg(`  ставишь ${f.n} [${PHYS_RU[f.t]}]${swapped ? ' (подмена по типу)' : ''}` +
-       `, у него ${PHYS_RU[tt]} — ` + (beats[f.t] === tt ? 'размен ТВОЙ' : 'мимо'));
-    if (beats[f.t] === tt){
+       (tt ? `, он ${tf.n} [${PHYS_RU[tt]}] — ` +
+         (beats[f.t] === tt ? 'размен ТВОЙ' : f.t === tt ? 'ничья, одинаковый тип' : 'размен ЕГО')
+        : ', ему нечем ответить'));
+    if (tt === null || beats[f.t] === tt){
       if (!swapped){ if (t.qi < open.length) t.qi++; else t.ci++; }
       const dbl = rnd() < crit(me.luck, t.s.luck) ? 2 : 1;
       const S = f.s;
@@ -999,27 +1031,11 @@ function fight(p, mobs, plan, capOverride){
     }
 
     /* ── ответ противников: до тебя дотягиваются только первые трое живых ── */
-    let reached = 0;
-    for (const e of E){
+    for (const {e, mf} of FIELD){
       if (!e.alive) continue;
-      if (++reached > REACH) break;
-      /* последователь одного из трёх типов, потом следующий в очереди этой линии */
-      const li = (rnd() * e.lines.length) | 0, line = e.lines[li];
-      let mf = line[e.li[li]++ % line.length];
-      /* заклятие, которое почти наверняка снимут, — выброшенный ход:
-         такого моб почти всегда меняет на другого */
-      if (wasted(mf, e, me) && rnd() < SKIP_P){
-        let g = null;
-        for (let k = 0; k < line.length && !g; k++){
-          const c = line[(e.li[li] + k) % line.length];
-          if (!wasted(c, e, me)) g = c;
-        }
-        if (!g) for (const ln of e.lines){ for (const c of ln) if (!wasted(c, e, me)){ g = c; break; } if (g) break; }
-        if (g) mf = g;
-      }
-      const mtt = PHYS[(rnd()*3)|0];
-      if (beats[mf.t] !== mtt){ lg(`  он ставит ${mf.n} [${PHYS_RU[mf.t]}] — мимо`); continue; }
-      lg(`  он ставит ${mf.n} [${PHYS_RU[mf.t]}] — размен ЕГО`);
+      if (e !== t) lg(`  ${e.m.n} ставит ${mf.n} [${PHYS_RU[mf.t]}] — ` +
+        (beats[mf.t] === f.t ? 'размен ЕГО' : mf.t === f.t ? 'ничья' : 'мимо'));
+      if (beats[mf.t] !== f.t) continue;
       enemyHits++;                                            // это один его размен
       /* последователь может нести и заклятие, и признак — берём всё */
       const efs = [];
@@ -1196,7 +1212,7 @@ function choosePlan(p, list, probe){
       for (let j = i + 1; j < seeds.length; j++){
         if (seeds[i].t === seeds[j].t) continue;
         combos.push([seeds[i], seeds[j]]);
-        for (let k = j + 1; k < Math.min(seeds.length, 4); k++)
+        for (let k = j + 1; k < seeds.length; k++)
           if (seeds[k].t !== seeds[i].t && seeds[k].t !== seeds[j].t)
             combos.push([seeds[i], seeds[j], seeds[k]]);
       }
@@ -1263,6 +1279,7 @@ function choosePlan(p, list, probe){
     plan = win;
   }
   plan = tuneAlt(p, list, plan, boss, probe, R);
+  plan = coverTypes(p, list, plan, boss, probe, R);
   plan.cands = cands;
   return plan;
 }
@@ -1274,12 +1291,12 @@ const spellFam = f => f.s ? Object.keys(f.s.v).sort().join(',') + '|' + f.s.f : 
 
 /* Подогнать подмены под механизм выбранного плана. Проверяем замером:
    если стало не лучше — оставляем как было. */
-function tuneAlt(p, list, plan, boss, probe, R){
+/* Лучший последователь каждого типа в двух видах: родня по механизму плана
+   (ядовитой ходовке — яд другого типа) и просто лучший по общей мерке. */
+function bestByType(p, plan, boss, R){
   const cards = [...plan.open, ...plan.loop];
   const names = new Set(cards.map(f => f.s && f.s.n).filter(Boolean));
   const fams  = new Set(cards.map(spellFam).filter(Boolean));
-  /* два кандидата в подмены на каждый тип: родня по механизму плана и просто
-     лучший по общей мерке. Что из этого работает — решает замер, а не вкус. */
   const pick = (same, tier) => { let b = null, bv = -Infinity;
     for (const f of same){ if (!tier(f)) continue;
       const v = scoreCand(p, f, boss); if (v > bv){ bv = v; b = f; } }
@@ -1293,6 +1310,44 @@ function tuneAlt(p, list, plan, boss, probe, R){
     const t = pick(same, () => true);
     if (t) top[q] = t;
   }
+  return {kin, top};
+}
+
+/* Последователи расходуются, поэтому двумя весь бой не отходишь: круг обязан
+   разойтись по всем трём типам. Мы не считаем расход поштучно — мы требуем,
+   чтобы в ротации был свой последователь на каждый тип, и подбираем лучшего
+   из тех, кого туда можно поставить. */
+let ALL_TYPES = true;
+function coverTypes(p, list, plan, boss, probe, R){
+  if (!ALL_TYPES) return plan;
+  const {kin, top} = bestByType(p, plan, boss, R);
+  const n2 = Math.max(700, probe * 3);
+  const meas = pl => { const a = scorePlan(p, list, pl, n2, 90210), b = scorePlan(p, list, pl, n2, 31337);
+                       return {w:(a.w+b.w)/2, r:(a.r+b.r)/2}; };
+  let cur = plan;
+  for (const q of PHYS){
+    if (cur.loop.some(f => f.t === q)) continue;
+    /* три претендента на пустой тип: родня по механизму, лучший по общей мерке
+       и просто самый больно бьющий этого типа — последний нужен, потому что в
+       дырку часто выгоднее поставить чистый удар, а не слабый каст */
+    const cands = [kin[q], top[q], (cur.alt || {})[q]]
+      .filter((f, i, a) => f && a.indexOf(f) === i);
+    if (!cands.length) continue;                 // такого типа в отряде нет вовсе
+    let best = null, bs = null;
+    for (const f of cands)
+      for (let pos = 0; pos <= cur.loop.length; pos++){
+        const L = cur.loop.slice(); L.splice(pos, 0, f);
+        const tr = {open: cur.open, loop: L, base: cur.base, alt: cur.alt};
+        const sc = meas(tr);
+        if (!bs || sc.w > bs.w + 0.01){ bs = sc; best = tr; }
+      }
+    if (best) cur = best;
+  }
+  return cur;
+}
+
+function tuneAlt(p, list, plan, boss, probe, R){
+  const {kin, top} = bestByType(p, plan, boss, R);
   /* Решение принимается один раз на моба, и разница тут бывает в пару-тройку
      процентов — на коротком зонде она тонет в шуме. Меряем с запасом. */
   const n2 = Math.max(700, probe * 3);
@@ -1903,6 +1958,7 @@ function runTheChain(p, n){
 /* ── основной прогон ──────────────────────────────────────────────────────── */
 function run(){
   MAX_TURNS = Math.max(5, val('maxTurns') || 60);
+  ALL_TYPES = $('allTypes').checked;
   const p = readPlayer(), n = Math.max(1, val('iters'));
   const ms = currentMobs();
   if (!ms.length) return;
@@ -1988,8 +2044,10 @@ function briefFor(m, r, p){
   const order = PHYS.filter(q => byType[q]);
   if (order.length)
     L.push(['Кем ходим', order.map(q => `<b>${PHYS_RU[q].toLowerCase()}</b> — ${follName(byType[q])}`).join('; ') +
-      (order.length > 1
-        ? '. Подряд одним типом больше трёх раз не дадут, так что круг всё равно пойдёт по типам — держи под рукой последователя на каждый'
+      (order.length > 2
+        ? '. Последователи расходуются, двумя весь бой не отходишь — круг идёт по всем трём'
+        : order.length > 1
+        ? '. Третьего типа под эту задачу в отряде нет — круг пойдёт двумя'
         : '. Другого типа под эту задачу в отряде нет')]);
 
   /* сворачиваем повторы: читается как ритм, а не как список */
@@ -2121,6 +2179,7 @@ function bumped(p, key, v){
 }
 function marg(){
   MAX_TURNS = Math.max(5, val('maxTurns') || 60);
+  ALL_TYPES = $('allTypes').checked;
   const p = readPlayer(), ms = currentMobs();
   const n = Math.max(1, Math.round(val('iters') / 4));
   if (!ms.length) return;
